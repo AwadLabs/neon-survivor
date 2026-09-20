@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>NEON SURVIVOR — الناجي النيوني</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#05010f; font-family:'Tajawal',sans-serif; }
+  #game { display:block; position:absolute; inset:0; }
+
+  /* ====== واجهات عامة ====== */
+  .overlay {
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; z-index:20;
+    background:radial-gradient(ellipse at center, rgba(20,5,50,.88), rgba(2,0,10,.96));
+    backdrop-filter: blur(4px); text-align:center; padding:20px;
+  }
+  .hidden { display:none !important; }
+
+  .title {
+    font-family:'Orbitron','Tajawal',sans-serif; font-size:clamp(38px,8vw,84px);
+    font-weight:800; letter-spacing:4px;
+    background:linear-gradient(180deg,#00f6ff,#ff00e0 60%,#7b2fff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 0 18px rgba(0,246,255,.7)) drop-shadow(0 0 40px rgba(255,0,224,.4));
+    animation:pulseGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes pulseGlow { 50% { filter:drop-shadow(0 0 30px rgba(0,246,255,1)) drop-shadow(0 0 70px rgba(255,0,224,.7)); } }
+  .subtitle { color:#8be9fd; margin:8px 0 24px; font-size:clamp(14px,2.5vw,20px); text-shadow:0 0 12px #00f6ff; }
+
+  .btn {
+    font-family:'Tajawal'; font-weight:900; font-size:clamp(18px,3vw,26px);
+    color:#0ff; background:rgba(0,20,40,.6); border:2px solid #00f6ff;
+    padding:14px 48px; margin:8px; cursor:pointer; border-radius:12px;
+    box-shadow:0 0 18px rgba(0,246,255,.5), inset 0 0 18px rgba(0,246,255,.12);
+    transition:all .15s ease; text-shadow:0 0 10px #0ff;
+  }
+  .btn:hover { background:#00f6ff; color:#001; transform:scale(1.06); box-shadow:0 0 45px #00f6ff; }
+  .btn.pink { color:#ff4df0; border-color:#ff00e0; box-shadow:0 0 18px rgba(255,0,224,.5); text-shadow:0 0 10px #f0f; }
+  .btn.pink:hover { background:#ff00e0; color:#100; box-shadow:0 0 45px #ff00e0; }
+  .btn:disabled { opacity:.35; cursor:not-allowed; transform:none; }
+
+  /* ====== المتجر الدائم ====== */
+  #shopGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; max-width:760px; width:100%; margin:14px 0; }
+  .shopItem {
+    background:rgba(10,0,30,.75); border:1px solid #7b2fff; border-radius:12px;
+    padding:14px; color:#d9c8ff; transition:.15s;
+  }
+  .shopItem:hover { border-color:#00f6ff; box-shadow:0 0 18px rgba(0,246,255,.35); transform:translateY(-3px); }
+  .shopItem h3 { color:#00f6ff; margin-bottom:6px; font-size:17px; }
+  .shopItem p { font-size:13px; opacity:.85; margin-bottom:10px; }
+  .shopItem button {
+    font-family:'Tajawal'; font-weight:700; background:transparent; color:#ffe14d;
+    border:1px solid #ffe14d; border-radius:8px; padding:6px 16px; cursor:pointer;
+    box-shadow:0 0 10px rgba(255,225,77,.3);
+  }
+  .shopItem button:hover:not(:disabled) { background:#ffe14d; color:#000; }
+  .shopItem button:disabled { opacity:.3; cursor:not-allowed; }
+  .credits { color:#ffe14d; font-size:22px; font-weight:900; text-shadow:0 0 14px #fc0; }
+
+  /* ====== شاشة الموت ====== */
+  #gameOverStats { color:#cfc; font-size:clamp(16px,3vw,24px); line-height:2; margin:14px 0; text-shadow:0 0 10px #0f0; }
+  #finalComment { color:#ff4df0; font-size:clamp(15px,2.6vw,22px); font-weight:700; margin-bottom:18px; text-shadow:0 0 14px #f0f; }
+
+  /* ====== بطاقات الترقية ====== */
+  #levelup h2 { color:#ffe14d; font-size:clamp(22px,4vw,36px); text-shadow:0 0 20px #fc0; margin-bottom:18px; }
+  #cards { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; max-width:900px; }
+  .card {
+    width:230px; min-height:230px; background:linear-gradient(160deg,rgba(15,0,40,.95),rgba(0,25,50,.95));
+    border:2px solid #00f6ff; border-radius:16px; padding:20px 14px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    transition:all .15s ease; color:#e8fbff; box-shadow:0 0 20px rgba(0,246,255,.25);
+  }
+  .card:hover { transform:translateY(-8px) scale(1.04); border-color:#ff00e0; box-shadow:0 0 40px rgba(255,0,224,.5); }
+  .card .icon { font-size:48px; filter:drop-shadow(0 0 10px #0ff); }
+  .card h3 { font-size:19px; color:#00f6ff; text-shadow:0 0 8px #0ff; }
+  .card p { font-size:13.5px; opacity:.85; line-height:1.6; }
+
+  /* ====== المعلق ====== */
+  #commentator {
+    position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:15;
+    color:#ffee58; font-weight:900; font-size:clamp(14px,2.4vw,22px);
+    text-shadow:0 0 12px #ff0, 0 2px 4px #000; pointer-events:none;
+    transition:opacity .4s; white-space:nowrap;
+  }
+
+  #hint { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); color:#456; font-size:12px; z-index:5; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="commentator" style="opacity:0"></div>
+<div id="hint">WASD / الأسهم للحركة — التصويب تلقائي — P للإيقاف المؤقت</div>
+
+<!-- قائمة البداية -->
+<div class="overlay" id="menu">
+  <div class="title">NEON SURVIVOR</div>
+  <div class="subtitle">⚡ الناجي النيوني — انجُ، اقتل، تطوّر ⚡</div>
+  <div class="credits">رصيدك الدائم: <span id="menuCredits">0</span> 💎</div>
+  <button class="btn" id="startBtn">▶ ابدأ اللعب</button>
+  <button class="btn pink" id="shopBtn">🛒 ترقيات دائمة</button>
+</div>
+
+<!-- المتجر الدائم -->
+<div class="overlay hidden" id="shop">
+  <h2 style="color:#7b2fff;text-shadow:0 0 20px #a55cff">🛒 الترقيات الدائمة</h2>
+  <div class="credits">رصيدك: <span id="shopCredits">0</span> 💎</div>
+  <div id="shopGrid"></div>
+  <button class="btn pink" id="backBtn">↩ رجوع</button>
+</div>
+
+<!-- ترقية مستوى -->
+<div class="overlay hidden" id="levelup">
+  <h2>⬆️ مستوى جديد! اختر ترقية</h2>
+  <div id="cards"></div>
+</div>
+
+<!-- نهاية اللعبة -->
+<div class="overlay hidden" id="gameover">
+  <div class="title" style="background:linear-gradient(180deg,#ff2244,#ff00e0);-webkit-background-clip:text;background-clip:text">انتهت اللعبة</div>
+  <div id="gameOverStats"></div>
+  <div id="finalComment"></div>
+  <button class="btn" id="retryBtn">🔄 العب مجدداً</button>
+  <button class="btn pink" id="menuBtn">🏠 القائمة الرئيسية</button>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   NEON SURVIVOR — لعبة نجاة روجلايت كاملة بملف واحد
+   ============================================================ */
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+let W = 0, H = 0, DPR = 1;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener("resize", resize); resize();
+
+const rand  = (a,b)=> a + Math.random()*(b-a);
+const randi = (a,b)=> Math.floor(rand(a,b+1));
+const dist  = (a,b)=> Math.hypot(a.x-b.x, a.y-b.y);
+const clamp = (v,a,b)=> Math.max(a, Math.min(b,v));
+const lerp  = (a,b,t)=> a+(b-a)*t;
+const pick  = arr => arr[Math.floor(Math.random()*arr.length)];
+
+/* ============================================================
+   الحفظ الدائم (localStorage)
+   ============================================================ */
+const SAVE_KEY = "neonSurvivorSave_v1";
+let save = { credits:0, meta:{ hp:0, dmg:0, spd:0, mag:0, xp:0, revive:0 } };
+try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.meta) save = s; } catch(e){}
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+
+/* ============================================================
+   المعلق الذكي — Smart AI Commentator
+   تستطيع ربطه بأي API حقيقي: ضع رابطك في AI_API_URL وستُرسل
+   أحداث اللعب كـ JSON، وعند أي فشل/تأخير يستخدم المولّد المحلي.
+   ============================================================ */
+const AI_API_URL = ""; // ← ضع هنا رابط API الخاص بك (مثل https://your-ai.com/comment)
+const commentEl = document.getElementById("commentator");
+let commentTimer = null;
+function showComment(text, ms = 3400){
+  commentEl.textContent = "🎙️ " + text;
+  commentEl.style.opacity = 1;
+  clearTimeout(commentTimer);
+  commentTimer = setTimeout(()=> commentEl.style.opacity = 0, ms);
+}
+const LOCAL_LINES = {
+  spawn:    ["المعركة بدأت… لا تجعلني أندم على تشجيعك!","حظاً موفقاً! سأراقبك عن كثب 👀","المدينة نيونية… والدماء ستكون كذلك أيضاً."],
+  streak10: ["عشرة قتلى! لا بأس… للمبتدئ.","بدأت تُشبه مقاتلاً حقيقياً!","حركات مقبولة. استمر!"],
+  streak25: ["أنت دمار شامل! 🔥","خمسة وعشرون! هل بقيت أحياءً بالفعل؟","الآلة تُولَد من جديد… وأنت هي الآلة!"],
+  streak50: ["50 قتيلاً! أنا لا أصدّق عينيّ!","أنت وحش نيوني متجسد! 😈","سجّلوا هذا الاسم في التاريخ!"],
+  slow:     ["20 ثانية بدون قتل… أتنام أم تلعب؟ 😴","هل نفدت ذخيرتك أم نفدت شجاعتك؟"],
+  lowhp:    ["صحتك في الحضيض! اهرب يا بطل!","اقتربت من النهاية… لا تخذلني الآن!","قلبك يخفق كالمحرك المتهالك!"],
+  levelup:  ["ترقية! التكنولوجيا تحبك.","قوة جديدة… استخدمها بحكمة.","المستوى يرتفع… والهيبة أيضاً!"],
+  elite:    ["وحش النخبة سقط! سحقته كالحشرة!","هذا ما يحدث لمن يتحدّى الأسطورة!"],
+  revive:   ["عُدت من الموت! لا تستهلك حياتي مجدداً…","الثانية فرصة! لا تضيّعها!"],
+  wave:     ["موجة أقوى قادمة! استعدّ…","الظلام يزداد كثافة…","أعداء جدد… ودماء جديدة! 💉"],
+  deathFast:["لقد كنت بطيئاً جداً! حتى ظلّك سبقك.","ماتت قبل أن أنتهي من جملتي التحفيزية…","حزين. حزين جداً. 🥀"],
+  deathMid: ["بداية شجاعة ونهاية مأساوية…","كنت قريباً… لكن القريب لا يكفي!"],
+  deathLong:["ناجٍ حقيقي! المدينة ستتذكرك.","وقت بقاء أسطوري! 👑","عشت أكثر من 90% من اللاعبين!"],
+};
+async function aiComment(event, ctxData = {}){
+  // 1) محاولة الاتصال بـ API خارجي إن وُجد
+  if (AI_API_URL){
+    try{
+      const ctrl = new AbortController();
+      const to = setTimeout(()=> ctrl.abort(), 2500);
+      const res = await fetch(AI_API_URL, {
+        method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal,
+        body: JSON.stringify({ event, ...ctxData, lang:"ar" })
+      });
+      clearTimeout(to);
+      if (res.ok){
+        const j = await res.json();
+        if (j && j.comment){ showComment(j.comment); return; }
+      }
+    }catch(e){/* fallback محلي */}
+  }
+  // 2) المولّد المحلي الذكي (قاعدة + سياق)
+  let line = pick(LOCAL_LINES[event] || ["…"]);
+  if (event === "deathFast" && ctxData.time > 45) line = pick(LOCAL_LINES.deathMid);
+  if (event === "deathLong" && ctxData.time < 120) line = pick(LOCAL_LINES.deathMid);
+  showComment(line);
+}
+
+/* ============================================================
+   الإدخال (لوحة مفاتيح + لمس)
+   ============================================================ */
+const keys = {};
+window.addEventListener("keydown", e=>{
+  keys[e.key.toLowerCase()] = true;
+  if (e.key.toLowerCase()==="p" && G.state==="play") G.state = "pause";
+  else if (e.key.toLowerCase()==="p" && G.state==="pause") G.state = "play";
+});
+window.addEventListener("keyup", e=> keys[e.key.toLowerCase()] = false);
+
+let touch = { active:false, sx:0, sy:0, dx:0, dy:0 };
+canvas.addEventListener("touchstart", e=>{
+  const t = e.touches[0]; touch.active = true; touch.sx = t.clientX; touch.sy = t.clientY; touch.dx = 0; touch.dy = 0;
+}, {passive:false});
+canvas.addEventListener("touchmove", e=>{
+  e.preventDefault();
+  const t = e.touches[0];
+  touch.dx = clamp(t.clientX - touch.sx, -60, 60);
+  touch.dy = clamp(t.clientY - touch.sy, -60, 60);
+}, {passive:false});
+canvas.addEventListener("touchend", ()=>{ touch.active = false; touch.dx = 0; touch.dy = 0; }, {passive:false});
+
+/* ============================================================
+   حالة اللعبة
+   ============================================================ */
+const G = {
+  state:"menu", // menu | play | levelup | pause | gameover
+  time:0, kills:0, wave:1, shake:0, slowmo:1,
+  player:null, enemies:[], bullets:[], ebullets:[],
+  gems:[], particles:[], floaters:[], weapons:[],
+  spawnT:0, commentCd:0, noKillT:0, camX:0, camY:0, worldW:0, worldH:0,
+};
+
+function newPlayer(){
+  const m = save.meta;
+  return {
+    x:0, y:0, r:16, speed: 190 * (1 + m.spd*0.05),
+    hp: 100 + m.hp*25, maxhp: 100 + m.hp*25,
+    level:1, xp:0, xpNeed: 8, dmgMul: 1 + m.dmg*0.10,
+    magnet: 90 * (1 + m.mag*0.20), xpMul: 1 + m.xp*0.10,
+    lives: m.revive, armor:0, crit:0.05, invuln:1.5, hitCd:0,
+    facing:0,
+  };
+}
+
+function resetGame(){
+  G.time = 0; G.kills = 0; G.wave = 1; G.shake = 0;
+  G.enemies = []; G.bullets = []; G.ebullets = [];
+  G.gems = []; G.particles = []; G.floaters = [];
+  G.spawnT = 0; G.noKillT = 0; G.commentCd = 0;
+  G.worldW = 3000; G.worldH = 3000;
+  G.player = newPlayer();
+  G.weapons = [
+    { type:"knife",   lvl:1, angle:0, cd:0 },
+    { type:"gun",     lvl:1, cd:0 },
+  ];
+}
+
+/* ============================================================
+   الأسلحة
+   ============================================================ */
+const WEAPON_DEFS = {
+  knife:   { name:"السكاكين الدوّارة", icon:"🔪", desc:"شفرات نيونية تدور حولك وتشرّح كل من يقترب", max:6 },
+  gun:     { name:"الرشاش النيوني",    icon:"🔫", desc:"يصوّب تلقائياً على أقرب عدو ويطلق وابل رصاص", max:6 },
+  lightning:{name:"الصاعقة",           icon:"⚡", desc:"ضربة رعد تتنقل بين الأعداء وتفحمهم", max:6 },
+  flame:   { name:"قاذف اللهب",        icon:"🔥", desc:"نبضات نارية تحرق الأعداء في اتجاههم", max:6 },
+  hole:    { name:"الثقب الأسود",      icon:"🕳️", desc:"ثقب أسود يسحب الأعداء ويسحقهم بجاذبيته", max:6 },
+};
+const UPGRADE_POOL = [
+  { id:"knife_dmg",  icon:"🔪", name:"شفرات أشدّ",      desc:"+30% ضرر السكاكين الدوّارة",            apply:()=> G.weapons.find(w=>w.type==="knife").dmgMul=(G.weapons.find(w=>w.type==="knife").dmgMul||1)+0.3, can:()=>true },
+  { id:"knife_n",    icon:"🌀", name:"شفرة إضافية",     desc:"+1 سكين دوّار حولك",                    apply:()=> { const w=G.weapons.find(x=>x.type==="knife"); w.lvl=Math.min(w.lvl+1,6); }, can:()=> G.weapons.find(x=>x.type==="knife").lvl<6 },
+  { id:"gun_rate",   icon:"🔫", name:"معدل إطلاق +20%", desc:"الرشاش يطلق أسرع",                      apply:()=> { const w=G.weapons.find(x=>x.type==="gun"); w.rateMul=(w.rateMul||1)*0.8; }, can:()=>true },
+  { id:"gun_dmg",    icon:"💥", name:"رصاص أقوى +25%",  desc:"+25% ضرر الرشاش",                       apply:()=> { const w=G.weapons.find(x=>x.type==="gun"); w.dmgMul=(w.dmgMul||1)+0.25; }, can:()=>true },
+  { id:"bullet_spd", icon:"🚀", name:"سرعة رصاص +20%",  desc:"رصاص أسرع يصعب تفاديه على الأعداء",     apply:()=> { const w=G.weapons.find(x=>x.type==="gun"); w.spdMul=(w.spdMul||1)+0.2; }, can:()=>true },
+  { id:"unlock_flame",icon:"🔥", name:"قاذف لهب",       desc:"سلاح جديد: نبضات نارية تلتهم الأعداء",  apply:()=> G.weapons.push({type:"flame",lvl:1,cd:0}), can:()=> !G.weapons.some(w=>w.type==="flame") },
+  { id:"flame_up",   icon:"🔥", name:"لهب أعنف",        desc:"+40% ضرر واتساع قاذف اللهب",            apply:()=> { const w=G.weapons.find(x=>x.type==="flame"); w.lvl=Math.min(w.lvl+1,6); w.dmgMul=(w.dmgMul||1)+0.4; }, can:()=> G.weapons.some(w=>w.type==="flame") && G.weapons.find(w=>w.type==="flame").lvl<6 },
+  { id:"unlock_bolt",icon:"⚡", name:"الصاعقة",         desc:"سلاح جديد: رعد يتنقل بين الأعداء",     apply:()=> G.weapons.push({type:"lightning",lvl:1,cd:0}), can:()=> !G.weapons.some(w=>w.type==="lightning") },
+  { id:"bolt_up",    icon:"⚡", name:"عاصفة رعدية",     desc:"الصاعقة تضرب أهدافاً أكثر وتتسبّب أكثر", apply:()=> { const w=G.weapons.find(x=>x.type==="lightning"); w.lvl=Math.min(w.lvl+1,6); w.chains=(w.chains||2)+2; }, can:()=> G.weapons.some(w=>w.type==="lightning") && G.weapons.find(w=>w.type==="lightning").lvl<6 },
+  { id:"unlock_hole",icon:"🕳️", name:"الثقب الأسود",   desc:"سلاح جديد: جاذبية تسحق الأعداء",        apply:()=> G.weapons.push({type:"hole",lvl:1,cd:0,hx:0,hy:0,life:0}), can:()=> !G.weapons.some(w=>w.type==="hole") },
+  { id:"hole_up",    icon:"🌌", name:"جاذبية أعظم",    desc:"الثقب الأسود أوسع ويدوم أطول",          apply:()=> { const h=G.weapons.find(x=>x.type==="hole"); h.lvl=Math.min(h.lvl+1,6); h.dmgMul=(h.dmgMul||1)+0.5; }, can:()=> G.weapons.some(w=>w.type==="hole") && G.weapons.find(w=>w.type==="hole").lvl<6 },
+  { id:"hp",         icon:"❤️", name:"هيكل مقوّى",     desc:"+50 صحة قصوى وشفاء فوري 50",           apply:()=> { G.player.maxhp+=50; G.player.hp=Math.min(G.player.hp+50, G.player.maxhp); }, can:()=>true },
+  { id:"heal",       icon:"💚", name:"شفاء طارئ",       desc:"استعد 40% من صحتك فوراً",               apply:()=> { G.player.hp=Math.min(G.player.hp + G.player.maxhp*0.4, G.player.maxhp); }, can:()=> G.player.hp < G.player.maxhp*0.9 },
+  { id:"speed",      icon:"👟", name:"سرعة حركة +12%",  desc:"تفادَ الأعداء كالظل",                   apply:()=> { G.player.speed*=1.12; }, can:()=>true },
+  { id:"magnet",     icon:"🧲", name:"مغناطيس XP +40%", desc:"اجمع الجواهر من مسافة أبعد",            apply:()=> { G.player.magnet*=1.4; }, can:()=>true },
+  { id:"armor",      icon:"🛡️", name:"درع نيون",        desc:"-12% من كل ضرر تتلقّاه",               apply:()=> { G.player.armor=Math.min(G.player.armor+0.12,0.5); }, can:()=> G.player.armor<0.4 },
+  { id:"crit",       icon:"🎯", name:"ضربات حرجة +10%", desc:"فرصة 10% إضافية لضعف الضرر",           apply:()=> { G.player.crit+=0.10; }, can:()=> G.player.crit<0.6 },
+];
+
+function openLevelUp(){
+  G.state = "levelup";
+  const opts = UPGRADE_POOL.filter(u=>u.can());
+  const chosen = [];
+  while (chosen.length < Math.min(3, opts.length)){
+    const c = pick(opts);
+    if (!chosen.includes(c)) chosen.push(c);
+  }
+  const wrap = document.getElementById("cards");
+  wrap.innerHTML = "";
+  chosen.forEach(u=>{
+    const d = document.createElement("div");
+    d.className = "card";
+    d.innerHTML = `<div class="icon">${u.icon}</div><h3>${u.name}</h3><p>${u.desc}</p>`;
+    d.onclick = ()=>{
+      u.apply();
+      G.state = "play";
+      document.getElementById("levelup").classList.add("hidden");
+      aiComment("levelup", { level: G.player.level });
+    };
+    wrap.appendChild(d);
+  });
+  document.getElementById("levelup").classList.remove("hidden");
+}
+
+function gainXP(n){
+  const p = G.player;
+  p.xp += n * p.xpMul;
+  while (p.xp >= p.xpNeed){
+    p.xp -= p.xpNeed; p.level++;
+    p.xpNeed = Math.floor(p.xpNeed * 1.35 + 4);
+    openLevelUp();
+    break;
+  }
+}
+
+/* ============================================================
+   الأعداء
+   ============================================================ */
+function spawnEnemy(){
+  const p = G.player;
+  const ang = rand(0, Math.PI*2);
+  const d = Math.max(W,H)*0.7;
+  const x = p.x + Math.cos(ang)*d, y = p.y + Math.sin(ang)*d;
+  const t = G.time;
+  const roll = Math.random();
+  let e;
+  const hpScale = 1 + t/45;
+  if (roll < 0.06 && t > 60){ // وحش نخبة
+    e = { type:"elite", x, y, r:30, hp:140*hpScale, maxhp:140*hpScale, speed:60, dmg:25, color:"#ff00e0", xp:12, hitFlash:0 };
+  } else if (roll < 0.25 && t > 30){ // شاحن سريع
+    e = { type:"dasher", x, y, r:11, hp:14*hpScale, maxhp:14*hpScale, speed:rand(150,185), dmg:8, color:"#00ff9d", xp:2, hitFlash:0 };
+  } else if (roll < 0.45 && t > 50){ // دبابة
+    e = { type:"tank", x, y, r:24, hp:70*hpScale, maxhp:70*hpScale, speed:45, dmg:20, color:"#ff9500", xp:6, hitFlash:0 };
+  } else { // مطارد عادي
+    e = { type:"chaser", x, y, r:14, hp:22*hpScale, maxhp:22*hpScale, speed:rand(70,105), dmg:10, color:"#ff2d55", xp:1, hitFlash:0 };
+  }
+  G.enemies.push(e);
+}
+
+/* ============================================================
+   الجسيمات والمؤثرات
+   ============================================================ */
+function burst(x, y, color, n=14, pow=1){
+  for (let i=0;i<n;i++){
+    const a = rand(0,Math.PI*2), s = rand(40,260)*pow;
+    G.particles.push({ x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:rand(0.3,0.8), max:0.8, color, size:rand(1.5,4) });
+  }
+}
+function floatText(x, y, txt, color){
+  G.floaters.push({ x, y, txt, color, life:0.9 });
+}
+function shake(m){ G.shake = Math.max(G.shake, m); }
+
+/* ============================================================
+   منطق الأسلحة
+   ============================================================ */
+function nearestEnemy(maxD = 1e9){
+  let best=null, bd=maxD;
+  for (const e of G.enemies){ const d = dist(e, G.player); if (d < bd){ bd = d; best = e; } }
+  return best;
+}
+function hurtEnemy(e, dmg, crit=false){
+  const p = G.player;
+  let d = dmg * p.dmgMul * (crit?2:1);
+  e.hp -= d; e.hitFlash = 0.12;
+  if (crit) floatText(e.x, e.y-e.r-6, "💥"+Math.round(d), "#ffe14d");
+  if (e.hp <= 0) killEnemy(e);
+}
+function killEnemy(e){
+  const i = G.enemies.indexOf(e); if (i<0) return;
+  G.enemies.splice(i,1);
+  G.kills++; G.noKillT = 0;
+  burst(e.x, e.y, e.color, e.type==="elite"?40:16, e.type==="elite"?1.6:1);
+  burst(e.x, e.y, "#00f6ff", 6, 0.7);
+  // جواهر XP
+  const n = e.xp;
+  for (let k=0;k<n;k++){
+    G.gems.push({ x:e.x+rand(-14,14), y:e.y+rand(-14,14), v:e.type==="elite"?8:1, t:0 });
+  }
+  if (e.type==="elite"){ aiComment("elite",{kills:G.kills}); shake(10); }
+  // تعليقات السلاسل
+  if (G.kills === 10) aiComment("streak10");
+  if (G.kills === 25) aiComment("streak25");
+  if (G.kills === 50) aiComment("streak50");
+}
+
+function updateWeapons(dt){
+  const p = G.player;
+  for (const w of G.weapons){
+    if (w.type === "knife"){
+      w.angle += dt * (2.2 + w.lvl*0.25);
+      const n = w.lvl + 1, radius = 70 + w.lvl*8;
+      w.dmgMul = w.dmgMul || 1;
+      for (let i=0;i<n;i++){
+        const a = w.angle + (i/n)*Math.PI*2;
+        const kx = p.x + Math.cos(a)*radius, ky = p.y + Math.sin(a)*radius;
+        for (const e of [...G.enemies]){
+          if (Math.hypot(e.x-kx, e.y-ky) < e.r + 12){
+            e._knCd = e._knCd || 0;
+            if (e._knCd <= 0){ hurtEnemy(e, 12*(w.dmgMul), Math.random()<p.crit); e._knCd = 0.4; burst(kx,ky,"#00f6ff",4,0.5); }
+          }
+        }
+      }
+    }
+    else if (w.type === "gun"){
+      w.cd -= dt;
+      const rate = 0.55 * (w.rateMul||1);
+      if (w.cd <= 0){
+        const t = nearestEnemy(700);
+        if (t){
+          w.cd = rate;
+          const a = Math.atan2(t.y-p.y, t.x-p.x);
+          const sp = 480 * (w.spdMul||1);
+          G.bullets.push({ x:p.x, y:p.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, dmg:10*(w.dmgMul||1), r:4, life:1.6 });
+          burst(p.x, p.y, "#0ff", 3, 0.4);
+        }
+      }
+    }
+    else if (w.type === "lightning"){
+      w.cd -= dt;
+      if (w.cd <= 0){
+        const first = nearestEnemy(520);
+        if (first){
+          w.cd = Math.max(0.9, 1.6 - w.lvl*0.12);
+          let cur = first, prev = p, hitSet = new Set();
+          const chains = 2 + w.lvl;
+          for (let c=0;c<chains && cur;c++){
+            hurtEnemy(cur, 16 + w.lvl*4, Math.random()<p.crit);
+            // برق مرئي
+            const segs = 6;
+            for (let s=0;s<=segs;s++){
+              const t = s/segs;
+              G.particles.push({ x:lerp(prev.x,cur.x,t)+rand(-8,8), y:lerp(prev.y,cur.y,t)+rand(-8,8),
+                vx:0, vy:0, life:0.25, max:0.25, color:"#aefcff", size:3 });
+            }
+            burst(cur.x, cur.y, "#aefcff", 8, 0.8);
+            hitSet.add(cur);
+            prev = cur;
+            let best=null, bd=260;
+            for (const e of G.enemies){ if (hitSet.has(e)) continue; const d = dist(e, prev); if (d<bd){ bd=d; best=e; } }
+            cur = best;
+          }
+        }
+      }
+    }
+    else if (w.type === "flame"){
+      w.cd -= dt;
+      if (w.cd <= 0){
+        const t = nearestEnemy(420);
+        if (t){
+          w.cd = Math.max(0.5, 1.1 - w.lvl*0.08);
+          const a = Math.atan2(t.y-p.y, t.x-p.x);
+          const range = 170 + w.lvl*15, arc = 0.6;
+          for (const e of [...G.enemies]){
+            const d = dist(e, p);
+            const ea = Math.atan2(e.y-p.y, e.x-p.x);
+            let da = Math.abs(ea - a); if (da > Math.PI) da = Math.PI*2 - da;
+            if (d < range && da < arc){
+              hurtEnemy(e, (9 + w.lvl*3)*(w.dmgMul||1), Math.random()<p.crit);
+              e.burn = 2; e.burnDps = 5*(w.dmgMul||1);
+            }
+          }
+          // لهب مرئي
+          for (let i=0;i<22;i++){
+            const fa = a + rand(-arc,arc), fd = rand(20,range);
+            G.particles.push({ x:p.x+Math.cos(fa)*fd, y:p.y+Math.sin(fa)*fd,
+              vx:Math.cos(fa)*40, vy:Math.sin(fa)*40, life:rand(0.25,0.55), max:0.55,
+              color: pick(["#ff9500","#ff5722","#ffe14d"]), size:rand(3,7) });
+          }
+        }
+      }
+    }
+    else if (w.type === "hole"){
+      w.cd -= dt;
+      if (w.life > 0){
+        w.life -= dt;
+        const R = 130 + w.lvl*25;
+        for (const e of [...G.enemies]){
+          const d = dist(e, w);
+          if (d < R*2.4){
+            const a = Math.atan2(w.y-e.y, w.x-e.x);
+            const pull = (1 - d/(R*2.4)) * 260;
+            e.x += Math.cos(a)*pull*dt; e.y += Math.sin(a)*pull*dt;
+            if (d < R*0.55){
+              e._holeCd = (e._holeCd||0) - dt;
+              if (e._holeCd <= 0){ hurtEnemy(e, (10+w.lvl*4)*(w.dmgMul||1)); e._holeCd = 0.35; }
+            }
+          }
+        }
+        if (Math.random()<0.6){
+          const a = rand(0,Math.PI*2), d = rand(R*0.7, R*2.2);
+          G.particles.push({ x:w.x+Math.cos(a)*d, y:w.y+Math.sin(a)*d,
+            vx:-Math.cos(a)*180, vy:-Math.sin(a)*180, life:0.4, max:0.4, color:"#7b2fff", size:2.5 });
+        }
+      }
+      else if (w.cd <= 0){
+        const t = nearestEnemy(650);
+        if (t){
+          w.cd = Math.max(4, 8 - w.lvl*0.6);
+          w.hx = lerp(p.x, t.x, 0.55); w.hy = lerp(p.y, t.y, 0.55);
+          w.x = w.hx; w.y = w.hy; w.life = 3 + w.lvl*0.4;
+        }
+      }
+    }
+  }
+}
+
+/* ============================================================
+   التحديث الرئيسي
+   ============================================================ */
+function update(dt){
+  const p = G.player;
+  G.time += dt;
+
+  // حركة اللاعب
+  let mx = 0, my = 0;
+  if (keys["w"] || keys["arrowup"])    my -= 1;
+  if (keys["s"] || keys["arrowdown"])  my += 1;
+  if (keys["a"] || keys["arrowleft"])  mx -= 1;
+  if (keys["d"] || keys["arrowright"]) mx += 1;
+  if (touch.active){ mx = touch.dx/60; my = touch.dy/60; }
+  const ml = Math.hypot(mx,my);
+  if (ml > 0){ mx/=ml; my/=ml; p.facing = Math.atan2(my,mx); }
+  p.x = clamp(p.x + mx*p.speed*dt, 20, G.worldW-20);
+  p.y = clamp(p.y + my*p.speed*dt, 20, G.worldH-20);
+  p.invuln = Math.max(0, p.invuln - dt);
+  p.hitCd  = Math.max(0, p.hitCd  - dt);
+
+  // توليد الأعداء (تتسارع مع الوقت)
+  G.spawnT -= dt;
+  const spawnEvery = Math.max(0.18, 1.1 - G.time*0.011);
+  if (G.spawnT <= 0){
+    G.spawnT = spawnEvery;
+    const count = 1 + Math.floor(G.time/40);
+    for (let i=0;i<count;i++) spawnEnemy();
+    const wave = 1 + Math.floor(G.time/30);
+    if (wave > G.wave){ G.wave = wave; aiComment("wave",{wave}); }
+  }
+
+  // تحديث الأعداء
+  for (const e of G.enemies){
+    e.hitFlash = Math.max(0, (e.hitFlash||0) - dt);
+    e._knCd = Math.max(0, (e._knCd||0) - dt);
+    if (e.burn > 0){
+      e.burn -= dt; e._burnT = (e._burnT||0) - dt;
+      if (e._burnT <= 0){ e._burnT = 0.5; hurtEnemy(e, e.burnDps*0.5); burst(e.x,e.y,"#ff5722",2,0.4); }
+    }
+    const a = Math.atan2(p.y-e.y, p.x-e.x);
+    let sp = e.speed;
+    if (e.type==="dasher"){ e._dashT = (e._dashT||rand(1,2)) - dt; if (e._dashT<0){ sp*=2.6; if (e._dashT<-0.4) e._dashT=rand(1,2);} }
+    e.x += Math.cos(a)*sp*dt; e.y += Math.sin(a)*sp*dt;
+
+    // اصطدام باللاعب
+    if (dist(e,p) < e.r + p.r && p.invuln<=0){
+      let dmg = e.dmg * (1 - p.armor);
+      p.hp -= dmg; p.invuln = 0.7;
+      shake(12); burst(p.x, p.y, "#ff2d55", 16, 1);
+      const ka = Math.atan2(p.y-e.y, p.x-e.x);
+      p.x += Math.cos(ka)*26; p.y += Math.sin(ka)*26;
+      if (p.hp < p.maxhp*0.3 && G.commentCd<=0){ aiComment("lowhp"); G.commentCd=8; }
+    }
+  }
+  G.commentCd = Math.max(0, G.commentCd - dt);
+
+  // رصاص اللاعب
+  for (let i=G.bullets.length-1;i>=0;i--){
+    const b = G.bullets[i];
+    b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
+    let dead = b.life<=0;
+    for (const e of [...G.enemies]){
+      if (Math.hypot(e.x-b.x, e.y-b.y) < e.r + b.r){
+        hurtEnemy(e, b.dmg, Math.random()<p.crit);
+        burst(b.x,b.y,"#00f6ff",5,0.6);
+        dead = true; break;
+      }
+    }
+    if (dead) G.bullets.splice(i,1);
+  }
+
+  // الجواهر
+  for (let i=G.gems.length-1;i>=0;i--){
+    const g = G.gems[i]; g.t += dt;
+    const d = dist(g, p);
+    if (d < p.magnet){
+      const a = Math.atan2(p.y-g.y, p.x-g.x);
+      const sp = 300 * (1 - d/p.magnet) + 120;
+      g.x += Math.cos(a)*sp*dt; g.y += Math.sin(a)*sp*dt;
+    }
+    if (d < p.r + 10){
+      gainXP(g.v);
+      burst(g.x, g.y, "#00f6ff", 4, 0.5);
+      G.gems.splice(i,1);
+    }
+  }
+
+  updateWeapons(dt);
+
+  // الجسيمات والنصوص
+  for (let i=G.particles.length-1;i>=0;i--){
+    const pt = G.particles[i];
+    pt.x += pt.vx*dt; pt.y += pt.vy*dt;
+    pt.vx *= 0.94; pt.vy *= 0.94; pt.life -= dt;
+    if (pt.life<=0) G.particles.splice(i,1);
+  }
+  for (let i=G.floaters.length-1;i>=0;i--){
+    G.floaters[i].y -= 40*dt; G.floaters[i].life -= dt;
+    if (G.floaters[i].life<=0) G.floaters.splice(i,1);
+  }
+
+  G.shake = Math.max(0, G.shake - dt*30);
+
+  // صمت القتل → سخرية
+  G.noKillT += dt;
+  if (G.noKillT > 20 && G.commentCd<=0){ aiComment("slow"); G.commentCd = 15; G.noKillT = 0; }
+
+  // الموت
+  if (p.hp <= 0){
+    p.hp = 0;
+    if (p.lives > 0){
+      p.lives--; p.hp = p.maxhp*0.5; p.invuln = 2.5;
+      burst(p.x, p.y, "#fff", 50, 2);
+      shake(20); aiComment("revive");
+    } else {
+      endGame();
+    }
+  }
+}
+
+/* ============================================================
+   الرسم
+   ============================================================ */
+let bgGrid = [];
+function draw(){
+  const p = G.player;
+  ctx.clearRect(0,0,W,H);
+
+  // اهتزاز الشاشة
+  ctx.save();
+  if (G.shake > 0) ctx.translate(rand(-G.shake,G.shake)*0.5, rand(-G.shake,G.shake)*0.5);
+
+  // الكاميرا تتبع اللاعب
+  const camX = clamp(p.x - W/2, 0, Math.max(0,G.worldW-W));
+  const camY = clamp(p.y - H/2, 0, Math.max(0,G.worldH-H));
+  ctx.translate(-camX, -camY);
+
+  // خلفية + شبكة نيون
+  ctx.fillStyle = "#070213";
+  ctx.fillRect(camX-10, camY-10, W+20, H+20);
+  ctx.strokeStyle = "rgba(123,47,255,0.14)";
+  ctx.lineWidth = 1;
+  const gs = 90, off = (G.time*12) % gs;
+  ctx.beginPath();
+  for (let x = Math.floor((camX-off)/gs)*gs; x < camX+W+gs; x+=gs){ ctx.moveTo(x+off, camY); ctx.lineTo(x+off, camY+H); }
+  for (let y = Math.floor((camY-off)/gs)*gs; y < camY+H+gs; y+=gs){ ctx.moveTo(camX, y+off); ctx.lineTo(camX+W, y+off); }
+  ctx.stroke();
+
+  // الجواهر
+  for (const g of G.gems){
+    const puls = 1 + Math.sin(g.t*6)*0.2;
+    ctx.shadowColor = "#00f6ff"; ctx.shadowBlur = 12;
+    ctx.fillStyle = "#00e5ff";
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.y-6*puls); ctx.lineTo(g.x+5*puls, g.y); ctx.lineTo(g.x, g.y+6*puls); ctx.lineTo(g.x-5*puls, g.y);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+
+  // الأعداء
+  for (const e of G.enemies){
+    ctx.shadowColor = e.color; ctx.shadowBlur = e.type==="elite"?26:14;
+    ctx.fillStyle = e.hitFlash>0 ? "#ffffff" : e.color;
+    ctx.beginPath();
+    if (e.type==="dasher"){
+      // مثلث موجّه نحو اللاعب
+      const a = Math.atan2(p.y-e.y, p.x-e.x);
+      ctx.moveTo(e.x+Math.cos(a)*e.r, e.y+Math.sin(a)*e.r);
+      ctx.lineTo(e.x+Math.cos(a+2.5)*e.r, e.y+Math.sin(a+2.5)*e.r);
+      ctx.lineTo(e.x+Math.cos(a-2.5)*e.r, e.y+Math.sin(a-2.5)*e.r);
+    } else {
+      ctx.arc(e.x, e.y, e.r, 0, Math.PI*2);
+    }
+    ctx.closePath(); ctx.fill();
+    if (e.type==="elite"){ ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke(); }
+  }
+  ctx.shadowBlur = 0;
+
+  // الثقب الأسود
+  const hole = G.weapons.find(w=>w.type==="hole" && w.life>0);
+  if (hole){
+    const R = 130 + hole.lvl*25;
+    const grd = ctx.createRadialGradient(hole.x,hole.y,4,hole.x,hole.y,R);
+    grd.addColorStop(0,"rgba(0,0,0,1)"); grd.addColorStop(0.5,"rgba(123,47,255,0.55)"); grd.addColorStop(1,"rgba(123,47,255,0)");
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(hole.x,hole.y,R,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#a55cff"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(hole.x,hole.y,R*0.5+Math.sin(G.time*8)*6,0,Math.PI*2); ctx.stroke();
+  }
+
+  // السكاكين الدوّارة
+  const knife = G.weapons.find(w=>w.type==="knife");
+  if (knife){
+    const n = knife.lvl + 1, radius = 70 + knife.lvl*8;
+    ctx.strokeStyle = "rgba(0,246,255,0.12)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, radius, 0, Math.PI*2); ctx.stroke();
+    for (let i=0;i<n;i++){
+      const a = knife.angle + (i/n)*Math.PI*2;
+      const kx = p.x + Math.cos(a)*radius, ky = p.y + Math.sin(a)*radius;
+      ctx.shadowColor = "#00f6ff"; ctx.shadowBlur = 14;
+      ctx.save(); ctx.translate(kx,ky); ctx.rotate(a + G.time*10);
+      ctx.fillStyle = "#bffcff";
+      ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(-8,-4); ctx.lineTo(-4,0); ctx.lineTo(-8,4); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  // رصاص اللاعب
+  for (const b of G.bullets){
+    ctx.shadowColor = "#00f6ff"; ctx.shadowBlur = 10;
+    ctx.fillStyle = "#dffdff";
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+
+  // اللاعب
+  const blink = p.invuln > 0 && Math.floor(G.time*20)%2===0;
+  if (!blink){
+    ctx.shadowColor = "#0ff"; ctx.shadowBlur = 22;
+    ctx.fillStyle = "#00f6ff";
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#001824";
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r*0.55, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + Math.cos(p.facing)*p.r*1.3, p.y + Math.sin(p.facing)*p.r*1.3);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+
+  // الجسيمات
+  for (const pt of G.particles){
+    ctx.globalAlpha = clamp(pt.life/pt.max, 0, 1);
+    ctx.fillStyle = pt.color;
+    ctx.fillRect(pt.x-pt.size/2, pt.y-pt.size/2, pt.size, pt.size);
+  }
+  ctx.globalAlpha = 1;
+
+  // نصوص طائرة
+  ctx.textAlign = "center"; ctx.font = "bold 15px Tajawal";
+  for (const f of G.floaters){
+    ctx.globalAlpha = clamp(f.life,0,1);
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.txt, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // ====== واجهة HUD ======
+  if (G.state==="play" || G.state==="pause" || G.state==="levelup"){
+    // شريط الصحة
+    const bw = Math.min(340, W*0.4);
+    ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(14, 14, bw, 20);
+    const hpr = clamp(p.hp/p.maxhp,0,1);
+    ctx.fillStyle = hpr>0.35 ? "#00ff9d" : "#ff2d55";
+    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+    ctx.fillRect(16, 16, (bw-4)*hpr, 16);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "#0ff"; ctx.lineWidth = 1; ctx.strokeRect(14.5, 14.5, bw-1, 19);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 13px Tajawal"; ctx.textAlign = "left";
+    ctx.fillText(`❤ ${Math.ceil(p.hp)} / ${p.maxhp}`, 20, 29);
+
+    // شريط الخبرة
+    ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(14, 40, bw, 12);
+    const xpr = clamp(p.xp/p.xpNeed,0,1);
+    ctx.fillStyle = "#00e5ff";
+    ctx.shadowColor = "#00e5ff"; ctx.shadowBlur = 8;
+    ctx.fillRect(16, 42, (bw-4)*xpr, 8);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#bffcff"; ctx.font = "bold 12px Tajawal";
+    ctx.fillText(`المستوى ${p.level}`, 20, 50);
+
+    // المؤقت والقتلى والموجة
+    ctx.textAlign = "right"; ctx.fillStyle = "#ffe14d";
+    ctx.font = "bold 20px Orbitron, Tajawal";
+    const mm = Math.floor(G.time/60), ss = Math.floor(G.time%60);
+    ctx.fillText(`⏱ ${mm}:${ss.toString().padStart(2,"0")}`, W-18, 32);
+    ctx.fillStyle = "#ff4df0";
+    ctx.fillText(`☠ ${G.kills}`, W-18, 60);
+    ctx.fillStyle = "#a55cff";
+    ctx.font = "bold 15px Tajawal";
+    ctx.fillText(`موجة ${G.wave}`, W-18, 84);
+    if (p.lives>0){ ctx.fillStyle="#7bff9d"; ctx.fillText(`♥ حياة إضافية ×${p.lives}`, W-18, 106); }
+  }
+
+  if (G.state === "pause"){
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = "#0ff"; ctx.font = "bold 44px Tajawal"; ctx.textAlign = "center";
+    ctx.shadowColor = "#0ff"; ctx.shadowBlur = 30;
+    ctx.fillText("⏸ إيقاف مؤقت", W/2, H/2);
+    ctx.shadowBlur = 0;
+  }
+
+  // عصا اللمس
+  if (touch.active){
+    ctx.strokeStyle = "rgba(0,246,255,0.4)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(touch.sx, touch.sy, 60, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = "rgba(0,246,255,0.5)";
+    ctx.beginPath(); ctx.arc(touch.sx+touch.dx, touch.sy+touch.dy, 22, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+/* ============================================================
+   نهاية اللعبة + الأرصدة
+   ============================================================ */
+function endGame(){
+  G.state = "gameover";
+  const earned = Math.floor(G.kills/5) + G.player.level*3 + Math.floor(G.time/20);
+  save.credits += earned; persist();
+  document.getElementById("menuCredits").textContent = save.credits;
+  const mm = Math.floor(G.time/60), ss = Math.floor(G.time%60);
+  document.getElementById("gameOverStats").innerHTML =
+    `⏱ نجوت لمدة <b>${mm}:${ss.toString().padStart(2,"0")}</b><br>` +
+    `☠ قتلت <b>${G.kills}</b> عدواً<br>` +
+    `⬆️ وصلت للمستوى <b>${G.player.level}</b><br>` +
+    `💎 ربحت <b>+${earned}</b> رصيداً دائماً`;
+  document.getElementById("gameover").classList.remove("hidden");
+  const ev = G.time < 45 ? "deathFast" : (G.time > 180 ? "deathLong" : "deathMid");
+  aiComment(ev, { time: G.time, kills: G.kills });
+}
+
+/* ============================================================
+   المتجر الدائم
+   ============================================================ */
+const META_ITEMS = [
+  { key:"hp",     icon:"❤️", name:"هيكل متين",      desc:"+25 صحة قصوى لكل مستوى",        base:20 },
+  { key:"dmg",    icon:"💥", name:"عدوانية",        desc:"+10% ضرر لكل مستوى",            base:25 },
+  { key:"spd",    icon:"👟", name:"أطراف خفيفة",    desc:"+5% سرعة حركة لكل مستوى",       base:15 },
+  { key:"mag",    icon:"🧲", name:"جاذب جواهر",     desc:"+20% نطاق جمع XP لكل مستوى",    base:15 },
+  { key:"xp",     icon:"💠", name:"استيعاب سريع",   desc:"+10% نقاط خبرة لكل مستوى",      base:20 },
+  { key:"revive", icon:"♥️", name:"بروتوكول الإحياء",desc:"عُد للحياة مرة عند الموت (مرة/مستوى)", base:80 },
+];
+function renderShop(){
+  document.getElementById("shopCredits").textContent = save.credits;
+  const grid = document.getElementById("shopGrid");
+  grid.innerHTML = "";
+  META_ITEMS.forEach(it=>{
+    const lvl = save.meta[it.key];
+    const cost = Math.floor(it.base * Math.pow(1.6, lvl));
+    const div = document.createElement("div");
+    div.className = "shopItem";
+    div.innerHTML = `<h3>${it.icon} ${it.name} <small style="color:#ffe14d">Lv.${lvl}</small></h3><p>${it.desc}</p>`;
+    const btn = document.createElement("button");
+    btn.textContent = `شراء — ${cost} 💎`;
+    btn.disabled = save.credits < cost || lvl >= 10;
+    if (lvl >= 10) btn.textContent = "الحد الأقصى ✔";
+    btn.onclick = ()=>{
+      if (save.credits >= cost && save.meta[it.key] < 10){
+        save.credits -= cost; save.meta[it.key]++; persist(); renderShop();
+        document.getElementById("menuCredits").textContent = save.credits;
+      }
+    };
+    div.appendChild(btn);
+    grid.appendChild(div);
+  });
+}
+
+/* ============================================================
+   ربط الأزرار
+   ============================================================ */
+document.getElementById("menuCredits").textContent = save.credits;
+document.getElementById("startBtn").onclick = ()=>{
+  document.getElementById("menu").classList.add("hidden");
+  resetGame(); G.state = "play";
+  aiComment("spawn");
+};
+document.getElementById("shopBtn").onclick = ()=>{
+  document.getElementById("menu").classList.add("hidden");
+  renderShop(); document.getElementById("shop").classList.remove("hidden");
+};
+document.getElementById("backBtn").onclick = ()=>{
+  document.getElementById("shop").classList.add("hidden");
+  document.getElementById("menu").classList.remove("hidden");
+};
+document.getElementById("retryBtn").onclick = ()=>{
+  document.getElementById("gameover").classList.add("hidden");
+  resetGame(); G.state = "play";
+  aiComment("spawn");
+};
+document.getElementById("menuBtn").onclick = ()=>{
+  document.getElementById("gameover").classList.add("hidden");
+  document.getElementById("menu").classList.remove("hidden");
+};
+
+/* ============================================================
+   الحلقة الرئيسية
+   ============================================================ */
+let last = performance.now();
+function loop(now){
+  let dt = Math.min((now - last)/1000, 0.05);
+  last = now;
+  if (G.state === "play" && G.player) update(dt);
+  if (G.player) draw();
+  requestAnimationFrame(loop);
+}
+// شاشة خلفية حية للقائمة
+G.player = newPlayer();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
