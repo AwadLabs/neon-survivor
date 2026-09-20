@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Agent Orchestrator | منسق الوكلاء</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0a0e1a;
+    color: #e0e6f0;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    color: #00e0ff;
+    margin-bottom: 8px;
+    font-size: 24px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #7a8aaa;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+  .card {
+    background: #131a2e;
+    border: 1px solid #1f2a44;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    color: #00e0ff;
+    font-size: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: #9aa8c8;
+    margin-bottom: 6px;
+  }
+  input, textarea, select {
+    width: 100%;
+    background: #0a0e1a;
+    border: 1px solid #2a3a5c;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #e0e6f0;
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 10px;
+    outline: none;
+    transition: border 0.2s;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: #00e0ff;
+  }
+  textarea { resize: vertical; min-height: 100px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 180px; }
+  .btn {
+    background: linear-gradient(135deg, #00e0ff, #0090ff);
+    color: #0a0e1a;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    width: 100%;
+  }
+  .btn:hover { box-shadow: 0 0 20px rgba(0,224,255,0.4); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-small {
+    width: auto;
+    padding: 6px 14px;
+    font-size: 13px;
+    background: #1f2a44;
+    color: #00e0ff;
+    border: 1px solid #2a3a5c;
+  }
+  .agent-config {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 10px;
+    background: #0f1524;
+    border-radius: 8px;
+    border: 1px solid #1f2a44;
+    align-items: center;
+  }
+  .agent-config input, .agent-config select {
+    margin-bottom: 0;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #1f2a44;
+    margin-bottom: 12px;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: #7a8aaa;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .tab.active {
+    color: #00e0ff;
+    border-bottom-color: #00e0ff;
+  }
+  .output {
+    background: #0a0e1a;
+    border: 1px solid #1f2a44;
+    border-radius: 8px;
+    padding: 14px;
+    min-height: 200px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  .status {
+    font-size: 12px;
+    color: #7a8aaa;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .status.running { color: #ffb800; }
+  .status.done { color: #00ff88; }
+  .status.error { color: #ff4466; }
+  .hint {
+    font-size: 12px;
+    color: #5a6a8a;
+    margin-top: -4px;
+    margin-bottom: 10px;
+  }
+  .badge {
+    display: inline-block;
+    background: #1f2a44;
+    color: #00e0ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🤖 Multi-Agent Orchestrator</h1>
+  <p class="subtitle">اكتب برومبتاً واحداً، ووزّع المهام على وكلاء متعددين، واحصل على النتيجة النهائية</p>
+
+  <!-- إعدادات API -->
+  <div class="card">
+    <h2>🔑 مفاتيح API</h2>
+    <div class="row">
+      <div>
+        <label>OpenAI API Key</label>
+        <input type="password" id="keyOpenAI" placeholder="sk-...">
+      </div>
+      <div>
+        <label>Google Gemini API Key</label>
+        <input type="password" id="keyGemini" placeholder="AIza...">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>OpenRouter API Key</label>
+        <input type="password" id="keyOpenRouter" placeholder="sk-or-...">
+      </div>
+      <div>
+        <label>DeepSeek API Key</label>
+        <input type="password" id="keyDeepSeek" placeholder="sk-...">
+      </div>
+    </div>
+    <div class="hint">🔒 المفاتيح تُخزَّن محلياً في متصفحك فقط ولا تُرسل لأي خادم آخر غير مزود الذكاء الاصطناعي.</div>
+    <button class="btn-small" onclick="saveKeys()">💾 حفظ المفاتيح</button>
+  </div>
+
+  <!-- المهمة الرئيسية -->
+  <div class="card">
+    <h2>📝 البرومبت الرئيسي</h2>
+    <textarea id="mainPrompt" placeholder="مثال: طور لعبة Neonfall بإضافة نظام الشخصيات والزعماء...">اكتب هنا المهمة التي تريد من الوكلاء تنفيذها...</textarea>
+  </div>
+
+  <!-- الوكلاء -->
+  <div class="card">
+    <h2>👥 الوكلاء <span class="badge" id="agentCount">3</span></h2>
+    <div id="agentsContainer"></div>
+    <button class="btn-small" onclick="addAgent()">➕ إضافة وكيل</button>
+  </div>
+
+  <!-- زر التشغيل -->
+  <button class="btn" id="runBtn" onclick="runOrchestration()">🚀 تشغيل المهمة</button>
+  <div class="status" id="status">جاهز للبدء</div>
+
+  <!-- النتائج -->
+  <div class="card" style="margin-top:16px;">
+    <h2>📊 النتائج</h2>
+    <div class="tabs" id="tabs"></div>
+    <div class="output" id="output">ستظهر النتائج هنا بعد التشغيل...</div>
+  </div>
+
+</div>
+
+<script>
+// ========== البيانات الافتراضية للوكلاء ==========
+const defaultAgents = [
+  { name: "Planner", role: "أنت مخطط استراتيجي. حلل المهمة، ضع خطة تفصيلية، وحدد الخطوات.", provider: "gemini", model: "gemini-1.5-flash" },
+  { name: "Developer", role: "أنت مطور برمجيات خبير. نفذ الخطة واكتب الكود المطلوب بدقة.", provider: "openai", model: "gpt-4o-mini" },
+  { name: "Reviewer", role: "أنت مراجع جودة. افحص مخرجات الفريق، اكتشف الأخطاء، وقدم نسخة محسنة نهائية.", provider: "openrouter", model: "anthropic/claude-3.5-sonnet" }
+];
+
+let agents = [...defaultAgents];
+let results = {};
+
+// ========== إدارة الوكلاء ==========
+function renderAgents() {
+  const container = document.getElementById('agentsContainer');
+  container.innerHTML = '';
+  agents.forEach((agent, i) => {
+    const div = document.createElement('div');
+    div.className = 'agent-config';
+    div.innerHTML = `
+      <input type="text" value="${agent.name}" placeholder="اسم الوكيل" onchange="agents[${i}].name=this.value">
+      <input type="text" value="${agent.role}" placeholder="دور الوكيل" onchange="agents[${i}].role=this.value">
+      <select onchange="agents[${i}].provider=this.value">
+        <option value="openai" ${agent.provider==='openai'?'selected':''}>OpenAI</option>
+        <option value="gemini" ${agent.provider==='gemini'?'selected':''}>Gemini</option>
+        <option value="openrouter" ${agent.provider==='openrouter'?'selected':''}>OpenRouter</option>
+        <option value="deepseek" ${agent.provider==='deepseek'?'selected':''}>DeepSeek</option>
+      </select>
+      <input type="text" value="${agent.model}" placeholder="اسم الموديل" onchange="agents[${i}].model=this.value">
+      <button class="btn-small" onclick="removeAgent(${i})">🗑️</button>
+    `;
+    container.appendChild(div);
+  });
+  document.getElementById('agentCount').textContent = agents.length;
+}
+
+function addAgent() {
+  agents.push({ name: "Agent " + (agents.length+1), role: "دور جديد", provider: "gemini", model: "gemini-1.5-flash" });
+  renderAgents();
+}
+
+function removeAgent(i) {
+  agents.splice(i, 1);
+  renderAgents();
+}
+
+// ========== حفظ المفاتيح ==========
+function saveKeys() {
+  const keys = {
+    openai: document.getElementById('keyOpenAI').value,
+    gemini: document.getElementById('keyGemini').value,
+    openrouter: document.getElementById('keyOpenRouter').value,
+    deepseek: document.getElementById('keyDeepSeek').value
+  };
+  localStorage.setItem('agentKeys', JSON.stringify(keys));
+  setStatus('✅ تم حفظ المفاتيح', 'done');
+}
+
+function loadKeys() {
+  const keys = JSON.parse(localStorage.getItem('agentKeys') || '{}');
+  document.getElementById('keyOpenAI').value = keys.openai || '';
+  document.getElementById('keyGemini').value = keys.gemini || '';
+  document.getElementById('keyOpenRouter').value = keys.openrouter || '';
+  document.getElementById('keyDeepSeek').value = keys.deepseek || '';
+}
+
+function getKey(provider) {
+  const keys = JSON.parse(localStorage.getItem('agentKeys') || '{}');
+  return keys[provider] || '';
+}
+
+// ========== استدعاء مزودي الذكاء الاصطناعي ==========
+async function callOpenAI(prompt, model) {
+  const key = getKey('openai');
+  if (!key) throw new Error('مفتاح OpenAI غير موجود');
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({
+      model: model || 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.choices[0].message.content;
+}
+
+async function callGemini(prompt, model) {
+  const key = getKey('gemini');
+  if (!key) throw new Error('مفتاح Gemini غير موجود');
+  const m = model || 'gemini-1.5-flash';
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.candidates[0].content.parts[0].text;
+}
+
+async function callOpenRouter(prompt, model) {
+  const key = getKey('openrouter');
+  if (!key) throw new Error('مفتاح OpenRouter غير موجود');
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({
+      model: model || 'anthropic/claude-3.5-sonnet',
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.choices[0].message.content;
+}
+
+async function callDeepSeek(prompt, model) {
+  const key = getKey('deepseek');
+  if (!key) throw new Error('مفتاح DeepSeek غير موجود');
+  const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({
+      model: model || 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.choices[0].message.content;
+}
+
+async function callAI(provider, prompt, model) {
+  switch(provider) {
+    case 'openai': return await callOpenAI(prompt, model);
+    case 'gemini': return await callGemini(prompt, model);
+    case 'openrouter': return await callOpenRouter(prompt, model);
+    case 'deepseek': return await callDeepSeek(prompt, model);
+    default: throw new Error('مزود غير معروف: ' + provider);
+  }
+}
+
+// ========== تنسيق الوكلاء ==========
+async function runOrchestration() {
+  const mainPrompt = document.getElementById('mainPrompt').value.trim();
+  if (!mainPrompt) { setStatus('⚠️ اكتب البرومبت الرئيسي أولاً', 'error'); return; }
+  if (agents.length === 0) { setStatus('⚠️ أضف وكيلاً واحداً على الأقل', 'error'); return; }
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  results = {};
+  renderTabs();
+
+  let previousOutput = '';
+
+  for (let i = 0; i < agents.length; i++) {
+    const agent = agents[i];
+    setStatus(`⏳ يعمل الآن: ${agent.name}...`, 'running');
+    showOutput(agent.name, '⏳ جاري المعالجة...');
+
+    const fullPrompt = `${agent.role}\n\n=== المهمة الرئيسية ===\n${mainPrompt}\n\n${previousOutput ? '=== مخرجات الوكلاء السابقين ===\n' + previousOutput + '\n\n=== مهمتك ===\nراجع مخرجات الفريق السابق، وحسّنها أو أكملها حسب دورك.' : ''}`;
+
+    try {
+      const result = await callAI(agent.provider, fullPrompt, agent.model);
+      results[agent.name] = result;
+      showOutput(agent.name, result);
+      previousOutput = result;
+    } catch (e) {
+      results[agent.name] = '❌ خطأ: ' + e.message;
+      showOutput(agent.name, '❌ خطأ: ' + e.message);
+    }
+  }
+
+  setStatus('✅ اكتملت المهمة! راجع النتائج.', 'done');
+  btn.disabled = false;
+  showTab('النتيجة النهائية');
+}
+
+// ========== الواجهة ==========
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  agents.forEach(a => {
+    const t = document.createElement('button');
+    t.className = 'tab';
+    t.textContent = a.name;
+    t.onclick = () => showTab(a.name);
+    tabs.appendChild(t);
+  });
+  const finalTab = document.createElement('button');
+  finalTab.className = 'tab';
+  finalTab.textContent = '🏆 النتيجة النهائية';
+  finalTab.onclick = () => showTab('النتيجة النهائية');
+  tabs.appendChild(finalTab);
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const tabs = document.querySelectorAll('.tab');
+  if (name === 'النتيجة النهائية') {
+    tabs[tabs.length - 1].classList.add('active');
+    const last = agents[agents.length - 1];
+    document.getElementById('output').textContent = results[last.name] || 'لا توجد نتائج بعد';
+  } else {
+    agents.forEach((a, i) => { if (a.name === name) tabs[i].classList.add('active'); });
+    document.getElementById('output').textContent = results[name] || 'لا توجد نتائج بعد';
+  }
+}
+
+function showOutput(name, text) {
+  document.getElementById('output').textContent = text;
+}
+
+function setStatus(msg, cls) {
+  const s = document.getElementById('status');
+  s.textContent = msg;
+  s.className = 'status ' + (cls || '');
+}
+
+// ========== التشغيل ==========
+renderAgents();
+loadKeys();
+renderTabs();
+</script>
+</body>
+</html>
