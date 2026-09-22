@@ -1,0 +1,1135 @@
+```html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Runner v2</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #05050d;
+            color: #fff;
+            font-family: 'Cairo', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 450px;
+            box-shadow: 0 0 35px rgba(0, 243, 255, 0.25), inset 0 0 15px rgba(0, 0, 0, 0.8);
+            border: 2px solid #00f3ff;
+            border-radius: 12px;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #100b26 0%, #05050d 100%);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 15, 0.88);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1 {
+            font-size: 3.2rem;
+            color: #00f3ff;
+            text-shadow: 0 0 12px #00f3ff, 0 0 25px rgba(0, 243, 255, 0.6);
+            font-weight: 900;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: #a0a0c0;
+            margin-bottom: 25px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            background: rgba(0, 243, 255, 0.05);
+            color: #00f3ff;
+            border: 2px solid #00f3ff;
+            padding: 10px 26px;
+            font-size: 1.1rem;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.15);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #00f3ff;
+            color: #050510;
+            box-shadow: 0 0 20px #00f3ff;
+            transform: translateY(-2px);
+        }
+
+        .btn-pink {
+            color: #ff00ff;
+            border-color: #ff00ff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.15);
+            background: rgba(255, 0, 255, 0.05);
+        }
+
+        .btn-pink:hover {
+            background: #ff00ff;
+            color: #050510;
+            box-shadow: 0 0 20px #ff00ff;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+            border-color: #666 !important;
+            color: #888 !important;
+        }
+
+        /* شاشة الشخصيات */
+        .characters-grid {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .char-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            width: 210px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .char-card:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-4px);
+        }
+
+        .char-card.selected {
+            border-color: #00f3ff;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+            background: rgba(0, 243, 255, 0.08);
+        }
+
+        .char-card.locked {
+            opacity: 0.7;
+            border-color: #ff0055;
+        }
+
+        .char-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .char-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .char-desc {
+            font-size: 0.82rem;
+            color: #b0b0d0;
+            margin-bottom: 10px;
+            line-height: 1.3;
+            min-height: 34px;
+        }
+
+        .char-stats {
+            font-size: 0.78rem;
+            color: #00f3ff;
+            text-align: right;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        /* شاشة المتجر */
+        .shop-items {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 460px;
+            margin-bottom: 20px;
+        }
+
+        .shop-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            padding: 12px 18px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+        }
+
+        .shop-item-info h4 {
+            color: #00f3ff;
+            font-size: 1.1rem;
+        }
+
+        .shop-item-info p {
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        /* واجهة اللعب HUD */
+        .hud {
+            position: absolute;
+            top: 12px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+            pointer-events: none;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .hud-item {
+            background: rgba(5, 5, 18, 0.75);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 243, 255, 0.4);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .coin-display {
+            color: #ffd700;
+            border-color: rgba(255, 215, 0, 0.5);
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        .boss-warning {
+            color: #ff0055;
+            border-color: #ff0055;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { box-shadow: 0 0 5px #ff0055; }
+            to { box-shadow: 0 0 15px #ff0055; }
+        }
+
+        .controls-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.4);
+            pointer-events: none;
+            z-index: 4;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- HUD أثناء اللعب -->
+        <div id="hud" class="hud hidden">
+            <div class="hud-item" id="hud-health">❤️ الصحة: 3/3</div>
+            <div class="hud-item coin-display" id="hud-coins">🪙 0</div>
+            <div class="hud-item" id="hud-score">🏆 النقاط: 0</div>
+            <div class="hud-item" id="hud-boss-timer">⚠️ الزعيم: 30ث</div>
+        </div>
+
+        <div class="controls-hint" id="controls-hint">اضغط [Space] أو [سهم لأعلى] للقفز / القفز المزدوج</div>
+
+        <!-- شاشة القائمة الرئيسية -->
+        <div id="main-menu" class="screen">
+            <h1>NEON RUNNER v2</h1>
+            <p class="subtitle">المستقبل مظلم، اركض، دمر الزعماء وابقَ على قيد الحياة</p>
+            <div class="btn-group">
+                <button class="btn" onclick="showCharacterSelect()">🚀 بدء اللعبة</button>
+                <button class="btn btn-pink" onclick="openShop()">🛒 المتجر</button>
+            </div>
+        </div>
+
+        <!-- شاشة اختيار الشخصيات -->
+        <div id="character-screen" class="screen hidden">
+            <h2>اختر بطل النيون</h2>
+            <div class="characters-grid" id="characters-container"></div>
+            <div class="btn-group">
+                <button class="btn" id="start-game-btn" onclick="startGame()">⚡ انطلق الآن!</button>
+                <button class="btn btn-pink" onclick="showMainScreen()">🔙 القائمة الرئيسية</button>
+            </div>
+        </div>
+
+        <!-- شاشة المتجر -->
+        <div id="shop-screen" class="screen hidden">
+            <h2>متجر الترقية</h2>
+            <p class="coin-display" id="shop-coins" style="font-size:1.3rem; margin-bottom:15px;">رصيدك: 🪙 0</p>
+            <div class="shop-items" id="shop-container"></div>
+            <button class="btn btn-pink" onclick="closeShop()">🔙 العودة</button>
+        </div>
+
+        <!-- شاشة نهاية اللعبة -->
+        <div id="game-over-screen" class="screen hidden">
+            <h2 style="color:#ff0055; text-shadow:0 0 15px #ff0055;">انتهت اللعبة</h2>
+            <p id="final-score" style="font-size:1.3rem; margin: 5px 0;">النقاط: 0</p>
+            <p id="final-coins" class="coin-display" style="font-size:1.2rem; margin-bottom: 20px;">العملات المكتسبة: 0🪙</p>
+            <div class="btn-group">
+                <button class="btn" onclick="restartGame()">🔄 اللعب مجدداً</button>
+                <button class="btn btn-pink" onclick="openShopFromGameOver()">🛒 المتجر</button>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- البيانات العامة الحفظ في LocalStorage ---
+        const DEFAULT_DATA = {
+            coins: 0,
+            selectedChar: 'Shadow',
+            unlockedChars: ['Shadow', 'Titan'],
+            upgrades: {
+                speed: 0,       // Max 5
+                health: 0,      // Max 3
+                doubleJump: false
+            }
+        };
+
+        let gameData = loadGameData();
+
+        function loadGameData() {
+            try {
+                const saved = localStorage.getItem('neonRunnerData_v2');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    return { ...DEFAULT_DATA, ...parsed, upgrades: { ...DEFAULT_DATA.upgrades, ...(parsed.upgrades || {}) } };
+                }
+            } catch(e) {
+                console.error("Failed to load save data", e);
+            }
+            return { ...DEFAULT_DATA };
+        }
+
+        function saveGame() {
+            localStorage.setItem('neonRunnerData_v2', JSON.stringify(gameData));
+        }
+
+        // --- تعريف الشخصيات ---
+        const CHARACTERS = {
+            Shadow: {
+                id: 'Shadow',
+                name: 'Shadow',
+                speed: 6.5,
+                jumpForce: -12.5,
+                health: 2,
+                color: '#00f3ff',
+                icon: '⚡',
+                desc: 'سريع للغاية وقفزته عالية، لكن صحته منخفضة.',
+                price: 0
+            },
+            Titan: {
+                id: 'Titan',
+                name: 'Titan',
+                speed: 4.5,
+                jumpForce: -9.5,
+                health: 5,
+                color: '#ff0055',
+                icon: '🛡️',
+                desc: 'بطيء وقفزته منخفضة، لكنه يمتلك صحة درع عالية.',
+                price: 0
+            },
+            Storm: {
+                id: 'Storm',
+                name: 'Storm',
+                speed: 5.5,
+                jumpForce: -11.0,
+                health: 3,
+                color: '#bd00ff',
+                icon: '🌀',
+                desc: 'متوازن ويثبت جدارته بقفزة مزدوجة افتراضية.',
+                price: 500
+            }
+        };
+
+        // --- متغيرات الحالة للعبة ---
+        let gameState = 'MENU'; // MENU, CHAR_SELECT, SHOP, PLAYING, GAMEOVER
+        let score = 0;
+        let sessionCoins = 0;
+        let gameTime = 0;
+        let bossTimer = 30;
+
+        const groundY = 380;
+
+        let player = {
+            x: 100,
+            y: 0,
+            width: 32,
+            height: 44,
+            vy: 0,
+            isJumping: false,
+            jumpCount: 0,
+            maxJumps: 1,
+            health: 3,
+            maxHealth: 3,
+            color: '#00f3ff',
+            speed: 5,
+            jumpForce: -11,
+            invulnerableTimer: 0
+        };
+
+        let obstacles = [];
+        let enemies = [];
+        let coinsList = [];
+        let rewardChests = [];
+        let boss = null;
+        let bossProjectiles = [];
+        let particles = [];
+        let floatTexts = [];
+
+        // --- إدارة الشاشات ---
+        function hideAllScreens() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('hud').classList.add('hidden');
+        }
+
+        function showMainScreen() {
+            gameState = 'MENU';
+            hideAllScreens();
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+
+        function showCharacterSelect() {
+            gameState = 'CHAR_SELECT';
+            hideAllScreens();
+            document.getElementById('character-screen').classList.remove('hidden');
+            renderCharacters();
+        }
+
+        function renderCharacters() {
+            const container = document.getElementById('characters-container');
+            container.innerHTML = '';
+
+            Object.keys(CHARACTERS).forEach(key => {
+                const char = CHARACTERS[key];
+                const isUnlocked = gameData.unlockedChars.includes(key);
+                const isSelected = gameData.selectedChar === key;
+
+                const card = document.createElement('div');
+                card.className = `char-card ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
+
+                card.innerHTML = `
+                    <span class="char-icon" style="text-shadow: 0 0 10px ${char.color}">${char.icon}</span>
+                    <div class="char-name" style="color: ${char.color}">${char.name}</div>
+                    <div class="char-desc">${char.desc}</div>
+                    <div class="char-stats">
+                        ❤️ الصحة: ${char.health} | 👟 السرعة: ${char.speed}
+                    </div>
+                    ${!isUnlocked ? `<div style="color:#ffd700; font-weight:bold; margin-top:8px;">فتح: 🪙 ${char.price}</div>` : ''}
+                `;
+
+                card.onclick = () => {
+                    if (isUnlocked) {
+                        gameData.selectedChar = key;
+                        saveGame();
+                        renderCharacters();
+                    } else {
+                        if (gameData.coins >= char.price) {
+                            gameData.coins -= char.price;
+                            gameData.unlockedChars.push(key);
+                            gameData.selectedChar = key;
+                            saveGame();
+                            renderCharacters();
+                            addFloatingText(`تم فتح ${char.name}!`, canvas.width/2, 100, '#00f3ff');
+                        } else {
+                            alert(`تحتاج إلى ${char.price} عملة لفتح ${char.name}!`);
+                        }
+                    }
+                };
+                container.appendChild(card);
+            });
+        }
+
+        function openShop() {
+            gameState = 'SHOP';
+            hideAllScreens();
+            document.getElementById('shop-screen').classList.remove('hidden');
+            renderShop();
+        }
+
+        function openShopFromGameOver() {
+            openShop();
+        }
+
+        function closeShop() {
+            showMainScreen();
+        }
+
+        function renderShop() {
+            document.getElementById('shop-coins').innerText = `رصيدك: 🪙 ${gameData.coins}`;
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+
+            const items = [
+                {
+                    id: 'speed',
+                    name: 'سرعة إضافية',
+                    desc: `زيادة سرعة الحركة (+0.5). المستوى: ${gameData.upgrades.speed}/5`,
+                    price: 50,
+                    maxed: gameData.upgrades.speed >= 5,
+                    action: () => {
+                        if (gameData.upgrades.speed < 5 && gameData.coins >= 50) {
+                            gameData.coins -= 50;
+                            gameData.upgrades.speed++;
+                            return true;
+                        }
+                        return false;
+                    }
+                },
+                {
+                    id: 'health',
+                    name: 'صحة قصوى إضافية',
+                    desc: `زيادة الحد الأقصى للصحة (+1). المستوى: ${gameData.upgrades.health}/3`,
+                    price: 100,
+                    maxed: gameData.upgrades.health >= 3,
+                    action: () => {
+                        if (gameData.upgrades.health < 3 && gameData.coins >= 100) {
+                            gameData.coins -= 100;
+                            gameData.upgrades.health++;
+                            return true;
+                        }
+                        return false;
+                    }
+                },
+                {
+                    id: 'doubleJump',
+                    name: 'قفزة مزدوجة دائمة',
+                    desc: 'تتيح القفز المزدوج لجميع الشخصيات بشكل دائم.',
+                    price: 200,
+                    maxed: gameData.upgrades.doubleJump,
+                    action: () => {
+                        if (!gameData.upgrades.doubleJump && gameData.coins >= 200) {
+                            gameData.coins -= 200;
+                            gameData.upgrades.doubleJump = true;
+                            return true;
+                        }
+                        return false;
+                    }
+                }
+            ];
+
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'shop-item';
+                el.innerHTML = `
+                    <div class="shop-item-info">
+                        <h4>${item.name}</h4>
+                        <p>${item.desc}</p>
+                    </div>
+                    <button class="btn" ${item.maxed ? 'disabled' : ''}>
+                        ${item.maxed ? 'مكتمل' : `🪙 ${item.price}`}
+                    </button>
+                `;
+
+                const btn = el.querySelector('button');
+                if (!item.maxed) {
+                    btn.onclick = () => {
+                        if (item.action()) {
+                            saveGame();
+                            renderShop();
+                        } else {
+                            alert('لا تملك عملات كافية!');
+                        }
+                    };
+                }
+                container.appendChild(el);
+            });
+        }
+
+        // --- بدء وإعادة تشغيل اللعبة ---
+        function startGame() {
+            hideAllScreens();
+            document.getElementById('hud').classList.remove('hidden');
+            gameState = 'PLAYING';
+
+            const baseChar = CHARACTERS[gameData.selectedChar] || CHARACTERS.Shadow;
+            
+            player.speed = baseChar.speed + (gameData.upgrades.speed * 0.5);
+            player.jumpForce = baseChar.jumpForce;
+            player.maxHealth = baseChar.health + gameData.upgrades.health;
+            player.health = player.maxHealth;
+            player.color = baseChar.color;
+            
+            // قفزة مزدوجة إن كانت مفعّلة بالترقية أو لشخصية Storm
+            player.maxJumps = (gameData.upgrades.doubleJump || baseChar.id === 'Storm') ? 2 : 1;
+
+            player.x = 100;
+            player.y = groundY - player.height;
+            player.vy = 0;
+            player.isJumping = false;
+            player.jumpCount = 0;
+            player.invulnerableTimer = 0;
+
+            score = 0;
+            sessionCoins = 0;
+            gameTime = 0;
+            bossTimer = 30;
+
+            obstacles = [];
+            enemies = [];
+            coinsList = [];
+            rewardChests = [];
+            boss = null;
+            bossProjectiles = [];
+            particles = [];
+            floatTexts = [];
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            gameData.coins += sessionCoins;
+            saveGame();
+
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `النقاط الإجمالية: ${Math.floor(score)}`;
+            document.getElementById('final-coins').innerText = `العملات المحصلة: 🪙 ${sessionCoins}`;
+        }
+
+        // --- مدخلات التحكم ---
+        function handleJump() {
+            if (gameState !== 'PLAYING') return;
+
+            if (!player.isJumping || player.jumpCount < player.maxJumps) {
+                player.vy = player.jumpForce;
+                player.isJumping = true;
+                player.jumpCount++;
+                createParticles(player.x + player.width/2, player.y + player.height, player.color, 8);
+            }
+        }
+
+        window.addEventListener('keydown', e => {
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                handleJump();
+            }
+        });
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            handleJump();
+        });
+
+        // --- نظام الجسيمات والنصوص الطافية ---
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 7,
+                    vy: (Math.random() - 0.5) * 7,
+                    alpha: 1,
+                    color: color,
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+
+        function addFloatingText(text, x, y, color = '#ffd700') {
+            floatTexts.push({
+                text: text,
+                x: x,
+                y: y,
+                alpha: 1,
+                color: color
+            });
+        }
+
+        // --- التحديث والتنفيذ الرئيسي (Update Loop) ---
+        let obstacleSpawnTimer = 0;
+        let enemySpawnTimer = 0;
+
+        function update(dt) {
+            if (gameState !== 'PLAYING') return;
+
+            gameTime += dt;
+            score += dt * 15;
+
+            // تحديث حصانة اللاعب عند الضرر
+            if (player.invulnerableTimer > 0) {
+                player.invulnerableTimer -= dt;
+            }
+
+            // مؤقت الزعيم
+            if (!boss) {
+                bossTimer -= dt;
+                if (bossTimer <= 0) {
+                    spawnBoss();
+                    bossTimer = 0;
+                }
+            }
+
+            // فيزياء اللاعب
+            player.vy += 0.55; // الجاذبية
+            player.y += player.vy;
+
+            if (player.y >= groundY - player.height) {
+                player.y = groundY - player.height;
+                player.vy = 0;
+                player.isJumping = false;
+                player.jumpCount = 0;
+            }
+
+            // توليد العوائق العادية (تتوقف عند حضور الزعيم)
+            if (!boss) {
+                obstacleSpawnTimer += dt;
+                if (obstacleSpawnTimer > 2.2 - Math.min(score/2000, 0.8)) {
+                    if (Math.random() < 0.6) {
+                        obstacles.push({
+                            x: canvas.width,
+                            y: groundY - 28,
+                            width: 22,
+                            height: 28,
+                            color: '#ff0055'
+                        });
+                    }
+                    obstacleSpawnTimer = 0;
+                }
+
+                // توليد الأعداء
+                enemySpawnTimer += dt;
+                if (enemySpawnTimer > 3.5 - Math.min(score/3000, 1.0)) {
+                    enemies.push({
+                        x: canvas.width,
+                        y: groundY - 32,
+                        width: 30,
+                        height: 32,
+                        color: '#ffbb00',
+                        vx: player.speed * 0.75
+                    });
+                    enemySpawnTimer = 0;
+                }
+            }
+
+            // تحريك وتحديث العقبات
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x -= player.speed;
+
+                if (checkCollision(player, obs)) {
+                    takeDamage();
+                }
+
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // تحريك وتحديث الأعداء
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let en = enemies[i];
+                en.x -= en.vx;
+
+                if (checkCollision(player, en)) {
+                    // هل قفز اللاعب فوق العدو؟
+                    if (player.vy > 0 && (player.y + player.height - player.vy) <= en.y + 12) {
+                        // القضاء على العدو
+                        enemies.splice(i, 1);
+                        player.vy = -9; // ارتداد بالقفز
+                        sessionCoins += 1;
+                        coinsList.push({ x: en.x, y: en.y, vy: -4, vx: -2 });
+                        createParticles(en.x + en.width/2, en.y + en.height/2, '#ffbb00', 12);
+                        addFloatingText('+1 🪙', en.x, en.y - 10);
+                    } else {
+                        takeDamage();
+                    }
+                } else if (en.x + en.width < 0) {
+                    enemies.splice(i, 1);
+                }
+            }
+
+            // تحديث الزعيم (Boss)
+            if (boss) {
+                boss.yAngle += dt * 2;
+                boss.y = (groundY - 120) + Math.sin(boss.yAngle) * 25; // حركة طفيفة لأعلى وأسفل
+
+                boss.shootTimer += dt;
+                if (boss.shootTimer > 1.8) {
+                    bossProjectiles.push({
+                        x: boss.x,
+                        y: boss.y + boss.height / 2 + (Math.random() * 20 - 10),
+                        width: 18,
+                        height: 10,
+                        speed: 7
+                    });
+                    boss.shootTimer = 0;
+                }
+
+                // تصادم اللاعب مع الزعيم (الضرب بالتصادم من الأعلى)
+                if (checkCollision(player, boss)) {
+                    if (player.vy > 0 && (player.y + player.height - player.vy) <= boss.y + 25) {
+                        boss.health--;
+                        player.vy = -11; // ارتداد للقفز
+                        createParticles(boss.x, boss.y + 20, '#ff00ff', 20);
+                        addFloatingText('-1 HP', boss.x, boss.y, '#ff00ff');
+
+                        if (boss.health <= 0) {
+                            // هزيمة الزعيم!
+                            rewardChests.push({
+                                x: boss.x + boss.width/4,
+                                y: boss.y,
+                                width: 35,
+                                height: 35,
+                                vy: -5
+                            });
+                            createParticles(boss.x + boss.width/2, boss.y + boss.height/2, '#ff00ff', 50);
+                            addFloatingText('هزمت الزعيم! 🎉', boss.x, boss.y - 30, '#00f3ff');
+                            boss = null;
+                            bossTimer = 30; // إعادة الضبط
+                        }
+                    } else {
+                        takeDamage();
+                    }
+                }
+            }
+
+            // تحريك قذائف الزعيم
+            for (let i = bossProjectiles.length - 1; i >= 0; i--) {
+                let bp = bossProjectiles[i];
+                bp.x -= bp.speed;
+
+                if (checkCollision(player, bp)) {
+                    takeDamage();
+                    bossProjectiles.splice(i, 1);
+                } else if (bp.x < 0) {
+                    bossProjectiles.splice(i, 1);
+                }
+            }
+
+            // تحريك وتجميع صناديق المكافأة
+            for (let i = rewardChests.length - 1; i >= 0; i--) {
+                let chest = rewardChests[i];
+                chest.x -= player.speed * 0.8;
+                chest.y += chest.vy;
+                chest.vy += 0.3; // جاذبية الصندوق
+
+                if (chest.y >= groundY - chest.height) {
+                    chest.y = groundY - chest.height;
+                    chest.vy = 0;
+                }
+
+                if (checkCollision(player, chest)) {
+                    sessionCoins += 50;
+                    addFloatingText('+50 عملة! 🎁', player.x, player.y - 20, '#ffd700');
+                    createParticles(chest.x, chest.y, '#ffd700', 30);
+                    rewardChests.splice(i, 1);
+                }
+            }
+
+            // تحريك وتجميع العملات
+            for (let i = coinsList.length - 1; i >= 0; i--) {
+                let c = coinsList[i];
+                c.x += c.vx || -player.speed;
+                c.y += c.vy;
+                c.vy += 0.3;
+
+                if (c.y >= groundY - 12) {
+                    c.y = groundY - 12;
+                    c.vy = 0;
+                    c.vx = -player.speed;
+                }
+
+                // التقاط العملة
+                const dx = (player.x + player.width/2) - c.x;
+                const dy = (player.y + player.height/2) - c.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < 32) {
+                    sessionCoins += 1;
+                    coinsList.splice(i, 1);
+                } else if (c.x < -20) {
+                    coinsList.splice(i, 1);
+                }
+            }
+
+            // تحديث الجسيمات
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.025;
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+
+            // تحديث النصوص الطافية
+            for (let i = floatTexts.length - 1; i >= 0; i--) {
+                let ft = floatTexts[i];
+                ft.y -= 1;
+                ft.alpha -= 0.018;
+                if (ft.alpha <= 0) floatTexts.splice(i, 1);
+            }
+
+            // تحديث عناصر HUD
+            document.getElementById('hud-health').innerText = `❤️ الصحة: ${player.health}/${player.maxHealth}`;
+            document.getElementById('hud-coins').innerText = `🪙 ${sessionCoins}`;
+            document.getElementById('hud-score').innerText = `🏆 النقاط: ${Math.floor(score)}`;
+            
+            const timerHud = document.getElementById('hud-boss-timer');
+            if (boss) {
+                timerHud.innerText = `⚠️ الزعيم نشط! (${boss.health}/5)`;
+                timerHud.classList.add('boss-warning');
+            } else {
+                timerHud.innerText = `⏱️ الزعيم بعد: ${Math.ceil(bossTimer)}ث`;
+                timerHud.classList.remove('boss-warning');
+            }
+        }
+
+        function spawnBoss() {
+            boss = {
+                x: canvas.width - 110,
+                y: groundY - 120,
+                width: 75,
+                height: 90,
+                health: 5,
+                maxHealth: 5,
+                shootTimer: 0,
+                color: '#ff00ff',
+                yAngle: 0
+            };
+            addFloatingText('⚠️ ظهر الزعيم! اقفز على رأسه!', canvas.width/2 - 80, 80, '#ff0055');
+        }
+
+        function takeDamage() {
+            if (player.invulnerableTimer > 0) return;
+
+            player.health--;
+            player.invulnerableTimer = 1.2; // 1.2 ثانية حصانة مؤقتة
+            createParticles(player.x + player.width/2, player.y + player.height/2, '#ff0055', 25);
+
+            if (player.health <= 0) {
+                gameOver();
+            }
+        }
+
+        function checkCollision(r1, r2) {
+            return r1.x < r2.x + r2.width &&
+                   r1.x + r1.width > r2.x &&
+                   r1.y < r2.y + r2.height &&
+                   r1.y + r1.height > r2.y;
+        }
+
+        // --- الرسم (Render Loop) ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. رسم خلفية شبكة النيون المتحركة
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.04)';
+            ctx.lineWidth = 1;
+            const gridOffset = (gameTime * player.speed * 10) % 40;
+            for (let x = -gridOffset; x < canvas.width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // 2. رسم خط الأرضية النيون
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#00f3ff';
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(canvas.width, groundY);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
+                // 3. رسم العقبات
+                ctx.fillStyle = '#ff0055';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ff0055';
+                obstacles.forEach(obs => {
+                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                });
+
+                // 4. رسم الأعداء
+                ctx.fillStyle = '#ffbb00';
+                ctx.shadowColor = '#ffbb00';
+                enemies.forEach(en => {
+                    ctx.fillRect(en.x, en.y, en.width, en.height);
+                });
+
+                // 5. رسم العملات
+                ctx.fillStyle = '#ffd700';
+                ctx.shadowColor = '#ffd700';
+                coinsList.forEach(c => {
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // 6. رسم صندوق المكافأة
+                rewardChests.forEach(chest => {
+                    ctx.fillStyle = '#ffd700';
+                    ctx.shadowColor = '#ffd700';
+                    ctx.shadowBlur = 15;
+                    ctx.fillRect(chest.x, chest.y, chest.width, chest.height);
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(chest.x + 10, chest.y + 10, chest.width - 20, chest.height - 20);
+                });
+
+                // 7. رسم الزعيم
+                if (boss) {
+                    ctx.fillStyle = boss.color;
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = boss.color;
+                    ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
+
+                    // عين الزعيم الشريرة
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(boss.x + 15, boss.y + 20, 18, 18);
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(boss.x + 18, boss.y + 24, 8, 8);
+
+                    // شريط صحة الزعيم
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                    ctx.fillRect(boss.x - 5, boss.y - 18, boss.width + 10, 10);
+                    ctx.fillStyle = '#ff00ff';
+                    ctx.fillRect(boss.x - 5, boss.y - 18, (boss.width + 10) * (boss.health / boss.maxHealth), 10);
+                }
+
+                // 8. رسم قذائف الزعيم
+                ctx.fillStyle = '#00ffff';
+                ctx.shadowColor = '#00ffff';
+                ctx.shadowBlur = 10;
+                bossProjectiles.forEach(bp => {
+                    ctx.fillRect(bp.x, bp.y, bp.width, bp.height);
+                });
+
+                // 9. رسم اللاعب (مع تأثير الوميض عند الضرر)
+                if (player.invulnerableTimer <= 0 || Math.floor(gameTime * 20) % 2 === 0) {
+                    ctx.fillStyle = player.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = player.color;
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+                    // تفاصيل حافة العين للبطل
+                    ctx.fillStyle = '#050510';
+                    ctx.fillRect(player.x + player.width - 10, player.y + 8, 6, 8);
+                }
+                ctx.shadowBlur = 0;
+
+                // 10. رسم الجسيمات
+                particles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+                ctx.globalAlpha = 1.0;
+
+                // 11. رسم النصوص الطافية
+                ctx.font = 'bold 16px Cairo';
+                floatTexts.forEach(ft => {
+                    ctx.fillStyle = ft.color;
+                    ctx.globalAlpha = Math.max(0, ft.alpha);
+                    ctx.fillText(ft.text, ft.x, ft.y);
+                });
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        // --- الحلقة الرئيسية (Game Loop) ---
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
+
+            update(dt);
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // بدء التشغيل عند التحميل
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
+```
