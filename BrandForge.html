@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>مصنع الهوية | Brand Forge</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Segoe UI', Tahoma, sans-serif; background: #0a0a0f; color: #e8e8f0; padding: 12px 12px 100px; min-height: 100vh; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { color: #C9A227; font-size: 20px; text-align: center; margin-bottom: 4px; letter-spacing: 1px; }
+  .sub { color: #6a6a7a; font-size: 12px; text-align: center; margin-bottom: 16px; }
+  .card { background: #13131c; border: 1px solid #23232e; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .card h2 { color: #C9A227; font-size: 14px; margin-bottom: 10px; }
+  label { display: block; font-size: 12px; color: #8a8a9a; margin-bottom: 5px; margin-top: 8px; }
+  input, textarea, select { width: 100%; background: #0a0a0f; border: 1px solid #2a2a38; border-radius: 10px; padding: 11px; color: #e8e8f0; font-family: inherit; font-size: 14px; outline: none; -webkit-appearance: none; }
+  input:focus, textarea:focus, select:focus { border-color: #C9A227; }
+  textarea { resize: vertical; min-height: 60px; line-height: 1.6; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 130px; }
+  .btn { background: linear-gradient(135deg, #C9A227, #8a6f1a); color: #0a0a0f; border: none; border-radius: 12px; padding: 15px; font-size: 15px; font-weight: 800; cursor: pointer; width: 100%; font-family: inherit; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.5; }
+  .btn-sm { width: auto; padding: 8px 14px; font-size: 12px; background: #23232e; color: #C9A227; border: 1px solid #2a2a38; border-radius: 8px; margin: 3px; cursor: pointer; font-family: inherit; }
+  .agent-row { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 6px; margin-bottom: 7px; padding: 8px; background: #0f0f18; border: 1px solid #23232e; border-radius: 10px; align-items: center; }
+  .agent-row input, .agent-row select { padding: 7px; font-size: 12px; margin: 0; }
+  .tabs { display: flex; gap: 3px; border-bottom: 1px solid #23232e; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 9px 13px; background: none; border: none; color: #6a6a7a; cursor: pointer; font-size: 12px; border-bottom: 2px solid transparent; white-space: nowrap; font-family: inherit; }
+  .tab.active { color: #C9A227; border-bottom-color: #C9A227; }
+  .output { background: #0a0a0f; border: 1px solid #23232e; border-radius: 10px; padding: 14px; min-height: 140px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word; max-height: 55vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .logo-box { background: #0a0a0f; border: 1px solid #23232e; border-radius: 10px; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 240px; }
+  .logo-box svg { max-width: 100%; max-height: 300px; height: auto; }
+  .status { font-size: 12px; color: #6a6a7a; margin-top: 8px; text-align: center; padding: 8px; border-radius: 8px; }
+  .status.run { color: #C9A227; background: rgba(201,162,39,0.08); }
+  .status.done { color: #00d68f; background: rgba(0,214,143,0.08); }
+  .status.err { color: #ff4d6d; background: rgba(255,77,109,0.08); }
+  .fixed { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px; background: linear-gradient(180deg, transparent, #0a0a0f 35%); z-index: 50; }
+  .hint { font-size: 11px; color: #4a4a5a; line-height: 1.5; margin-top: 6px; }
+  .swatch { display: inline-block; width: 22px; height: 22px; border-radius: 6px; vertical-align: middle; margin: 0 4px; border: 1px solid #333; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>⚒ مصنع الهوية</h1>
+  <p class="sub">وكلاء يصنعون اسمك، شعارك، وألوانك</p>
+
+  <div class="card">
+    <h2>🔑 المفاتيح</h2>
+    <label>Gemini</label>
+    <input type="password" id="kGemini" placeholder="AIza..." autocomplete="off">
+    <label>Groq</label>
+    <input type="password" id="kGroq" placeholder="gsk_..." autocomplete="off">
+    <label>OpenRouter</label>
+    <input type="password" id="kOR" placeholder="sk-or-..." autocomplete="off">
+    <label>Cerebras</label>
+    <input type="password" id="kCerebras" placeholder="csk-..." autocomplete="off">
+    <button class="btn-sm" onclick="saveKeys()">💾 حفظ المفاتيح</button>
+  </div>
+
+  <div class="card">
+    <h2>📝 عنك</h2>
+    <label>اسمك</label>
+    <input id="iName" placeholder="مثال: عبدالله">
+    <label>مجالك أو اهتمامك</label>
+    <input id="iField" placeholder="مثال: سلاسل الإمداد والذكاء الاصطناعي">
+    <label>3 قيم تعبّر عنك</label>
+    <input id="iValues" placeholder="مثال: العمق، الجذرية، الاحتراف">
+    <label>ما الذي تكرهه / لا تريده</label>
+    <input id="iAnti" placeholder="مثال: الحلول السطحية، الكلام الفارغ">
+    <label>وصف مختصر لك (اختياري)</label>
+    <textarea id="iDesc" placeholder="سطر أو سطران..."></textarea>
+  </div>
+
+  <div class="card">
+    <h2>👥 الوكلاء</h2>
+    <div id="agents"></div>
+    <button class="btn-sm" onclick="resetAgents()">🔄 الفريق الافتراضي</button>
+  </div>
+
+  <div class="card">
+    <h2>🏆 النتيجة</h2>
+    <div class="tabs" id="tabs"></div>
+    <div id="logoArea" class="logo-box" style="display:none;"></div>
+    <div class="output" id="out">النتيجة ستظهر هنا...</div>
+    <div style="margin-top:8px;">
+      <button class="btn-sm" onclick="copyAll()">📋 نسخ الكل</button>
+      <button class="btn-sm" onclick="downloadSVG()">⬇️ تحميل الشعار</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="fixed">
+  <button class="btn" id="runBtn" onclick="run()">⚒ اصنع الهوية</button>
+  <div class="status" id="st">جاهز</div>
+</div>
+
+<script>
+"use strict";
+
+/* ===== الفريق الافتراضي ===== */
+const DEFAULT_AGENTS = [
+  { name:'Strategist', role:'أنت خبير علامات تجارية. حلل المعلومات، وحدد موقع العلامة في 3 أسطر: (1) ما تمثله، (2) لمن، (3) ما يميزها جذرياً. لا مقدمات.',
+    provider:'gemini', model:'gemini-3.5-flash-lite', phase:1 },
+  { name:'Namer', role:'أنت مبدع أسماء. اقترح 10 أسماء علامة تجارية. لكل اسم: الاسم بالعربية، بالحروف اللاتينية، والمعنى في سطر. الأسماء يجب أن تكون: قصيرة (مقطع أو اثنان)، سهلة النطق، غير مستهلكة. تجنب: Labs, Tech, Pro, Hub, X.',
+    provider:'groq', model:'llama-3.3-70b-versatile', phase:1 },
+  { name:'Selector', role:'أنت مدير إبداعي صارم. من الأسماء السابقة، اختر 3 فقط. لكل اسم مختار اكتب: (1) لماذا اخترته، (2) الشعار اللفظي (Tagline) في 4 كلمات أو أقل، (3) 3 ألوان Hex تعبّر عنه. اختم بـ "الاختيار النهائي: [الاسم]".',
+    provider:'cerebras', model:'qwen-3.8-27b', phase:2 },
+  { name:'Visualizer', role:'أنت مصمم شعارات. صمم شعاراً هندسياً بسيطاً وعميقاً لاسم العلامة المختار. أخرِج كود SVG فقط (بدون شرح وبدون markdown) يبدأ بـ <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"> وينتهي بـ </svg>. استخدم 3 أشكال كحد أقصى، وألوان الهوية. يجب أن يعمل الرسم مباشرة.',
+    provider:'gemini', model:'gemini-3.5-flash-lite', phase:3 }
+];
+
+let agents = [];
+let results = {};
+let current = '';
+let lastSVG = '';
+
+/* ===== المفاتيح ===== */
+function saveKeys(){
+  localStorage.setItem('brandForgeKeys', JSON.stringify({
+    gemini: document.getElementById('kGemini').value.trim(),
+    groq: document.getElementById('kGroq').value.trim(),
+    openrouter: document.getElementById('kOR').value.trim(),
+    cerebras: document.getElementById('kCerebras').value.trim()
+  }));
+  setStatus('✅ تم حفظ المفاتيح','done');
+}
+function loadKeys(){
+  const k = JSON.parse(localStorage.getItem('brandForgeKeys')||'{}');
+  document.getElementById('kGemini').value = k.gemini||'';
+  document.getElementById('kGroq').value = k.groq||'';
+  document.getElementById('kOR').value = k.openrouter||'';
+  document.getElementById('kCerebras').value = k.cerebras||'';
+}
+function getKey(p){
+  const k = JSON.parse(localStorage.getItem('brandForgeKeys')||'{}');
+  return k[p]||'';
+}
+
+/* ===== الوكلاء ===== */
+function renderAgents(){
+  const c = document.getElementById('agents');
+  c.innerHTML = '';
+  agents.forEach((a,i)=>{
+    const d = document.createElement('div');
+    d.className = 'agent-row';
+    d.innerHTML = `
+      <input value="${a.name}" onchange="agents[${i}].name=this.value">
+      <select onchange="agents[${i}].provider=this.value">
+        <option value="gemini" ${a.provider==='gemini'?'selected':''}>Gemini</option>
+        <option value="groq" ${a.provider==='groq'?'selected':''}>Groq</option>
+        <option value="cerebras" ${a.provider==='cerebras'?'selected':''}>Cerebras</option>
+        <option value="openrouter" ${a.provider==='openrouter'?'selected':''}>OpenRouter</option>
+      </select>
+      <input value="${a.model}" onchange="agents[${i}].model=this.value">
+    `;
+    c.appendChild(d);
+  });
+}
+function resetAgents(){
+  agents = JSON.parse(JSON.stringify(DEFAULT_AGENTS));
+  renderAgents();
+}
+
+/* ===== API ===== */
+async function callGemini(prompt, model){
+  const key = getKey('gemini');
+  if(!key) throw new Error('مفتاح Gemini مفقود');
+  const m = model || 'gemini-3.5-flash-lite';
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+  });
+  const d = await r.json();
+  if(d.error) throw new Error(d.error.message);
+  if(!d.candidates?.[0]) throw new Error('لا استجابة من Gemini');
+  return d.candidates[0].content.parts[0].text;
+}
+async function callGroq(prompt, model){
+  const key = getKey('groq');
+  if(!key) throw new Error('مفتاح Groq مفقود');
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body: JSON.stringify({model:model||'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}]})
+  });
+  const d = await r.json();
+  if(d.error) throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+async function callCerebras(prompt, model){
+  const key = getKey('cerebras');
+  if(!key) throw new Error('مفتاح Cerebras مفقود');
+  const r = await fetch('https://api.cerebras.ai/v1/chat/completions',{
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body: JSON.stringify({model:model||'qwen-3.8-27b',messages:[{role:'user',content:prompt}]})
+  });
+  const d = await r.json();
+  if(d.error) throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+async function callOR(prompt, model){
+  const key = getKey('openrouter');
+  if(!key) throw new Error('مفتاح OpenRouter مفقود');
+  const r = await fetch('https://openrouter.ai/api/v1/chat/completions',{
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body: JSON.stringify({model:model||'google/gemini-2.0-flash-exp:free',messages:[{role:'user',content:prompt}]})
+  });
+  const d = await r.json();
+  if(d.error) throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+async function callAI(p, prompt, model){
+  if(p==='gemini') return callGemini(prompt,model);
+  if(p==='groq') return callGroq(prompt,model);
+  if(p==='cerebras') return callCerebras(prompt,model);
+  if(p==='openrouter') return callOR(prompt,model);
+  throw new Error('مزود غير معروف');
+}
+
+/* ===== التنفيذ ===== */
+async function run(){
+  const info = {
+    name: document.getElementById('iName').value.trim(),
+    field: document.getElementById('iField').value.trim(),
+    values: document.getElementById('iValues').value.trim(),
+    anti: document.getElementById('iAnti').value.trim(),
+    desc: document.getElementById('iDesc').value.trim()
+  };
+  if(!info.name || !info.field){ setStatus('⚠️ اكتب الاسم والمجال','err'); return; }
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true; btn.textContent = '⏳ يعمل...';
+  results = {}; lastSVG = '';
+  document.getElementById('logoArea').style.display = 'none';
+  document.getElementById('out').style.display = 'block';
+
+  const brief = `الاسم: ${info.name}
+المجال: ${info.field}
+القيم: ${info.values}
+ما يرفضه: ${info.anti}
+وصف: ${info.desc}`;
+
+  const phases = {};
+  agents.forEach(a => { (phases[a.phase] ||= []).push(a); });
+  const nums = Object.keys(phases).map(Number).sort((a,b)=>a-b);
+  let acc = '';
+
+  for(const n of nums){
+    setStatus(`⏳ المرحلة ${n}: ${phases[n].length} وكيل...`, 'run');
+    const settled = await Promise.all(phases[n].map(async ag => {
+      const prompt = `${ag.role}\n\n=== معلومات صاحب الهوية ===\n${brief}${acc ? '\n\n=== مخرجات سابقة ===\n'+acc : ''}`;
+      try { return { name: ag.name, text: await callAI(ag.provider, prompt, ag.model), ok:true }; }
+      catch(e){ return { name: ag.name, text: '❌ '+e.message, ok:false }; }
+    }));
+    let chunk = '';
+    for(const s of settled){ results[s.name] = s.text; chunk += `\n\n## ${s.name}\n${s.text}`; }
+    acc += `\n--- المرحلة ${n} ---${chunk}`;
+    renderTabs();
+  }
+
+  // استخراج SVG
+  const viz = results['Visualizer'] || '';
+  const m = viz.match(/<svg[\s\S]*?<\/svg>/i);
+  if(m){
+    lastSVG = m[0];
+    const box = document.getElementById('logoArea');
+    box.innerHTML = lastSVG;
+    box.style.display = 'flex';
+  }
+
+  setStatus('✅ اكتملت الهوية', 'done');
+  btn.disabled = false; btn.textContent = '⚒ اصنع الهوية';
+  const last = Object.keys(results).pop();
+  showTab(last);
+}
+
+function renderTabs(){
+  const t = document.getElementById('tabs');
+  t.innerHTML = '';
+  agents.forEach(a=>{
+    const b = document.createElement('button');
+    b.className = 'tab';
+    b.textContent = a.name + (results[a.name] ? ' ✓' : '');
+    b.onclick = ()=> showTab(a.name);
+    t.appendChild(b);
+  });
+}
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  const tabs = document.querySelectorAll('.tab');
+  agents.forEach((a,i)=>{ if(a.name===name) tabs[i].classList.add('active'); });
+  current = name;
+  document.getElementById('out').textContent = results[name] || '—';
+}
+
+/* ===== التصدير ===== */
+async function copyAll(){
+  let txt = '';
+  for(const k in results) txt += `\n\n## ${k}\n${results[k]}`;
+  if(!txt) return;
+  try { await navigator.clipboard.writeText(txt); setStatus('📋 تم النسخ','done'); }
+  catch(e){
+    const ta = document.createElement('textarea'); ta.value = txt;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    setStatus('📋 تم النسخ','done');
+  }
+}
+function downloadSVG(){
+  if(!lastSVG){ setStatus('⚠️ لا يوجد شعار','err'); return; }
+  const blob = new Blob([lastSVG], {type:'image/svg+xml'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'logo-'+Date.now()+'.svg';
+  a.click();
+  setStatus('✅ تم تحميل الشعار','done');
+}
+
+function setStatus(m,c){
+  const s = document.getElementById('st');
+  s.textContent = m;
+  s.className = 'status '+(c||'');
+}
+
+/* ===== تشغيل ===== */
+agents = JSON.parse(JSON.stringify(DEFAULT_AGENTS));
+renderAgents();
+loadKeys();
+</script>
+</body>
+</html>
