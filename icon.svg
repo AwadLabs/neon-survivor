@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="42%" r="55%">
+      <stop offset="0" stop-color="#00d68f" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#00d68f" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="113" ry="113" fill="#0a0a0f"/>
+  <rect width="512" height="512" rx="113" ry="113" fill="url(#halo)"/>
+  <rect x="5" y="5" width="502" height="502" rx="108" ry="108" fill="none" stroke="#00d68f" stroke-opacity="0.3" stroke-width="4"/>
+
+  <text x="256" y="292" text-anchor="middle" direction="rtl"
+        font-family="Cairo, 'Noto Kufi Arabic', 'Noto Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif"
+        font-weight="700" font-size="290" fill="#00d68f" filter="url(#glow)">ص</text>
+
+  <circle cx="206" cy="420" r="15" fill="#00d68f"/>
+  <circle cx="256" cy="420" r="15" fill="#ffb800"/>
+  <circle cx="306" cy="420" r="15" fill="#ff4d6d"/>
+</svg>
